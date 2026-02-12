@@ -1,6 +1,6 @@
 package com.sea.desafio_backend.repository;
 
-import com.sea.desafio_backend.model.entity.Email;
+import com.sea.desafio_backend.model.entity.ClienteEmail;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,14 +12,14 @@ import java.util.Optional;
  * Relacionamento N:1 com Cliente (múltiplos emails por cliente)
  */
 @Repository
-public interface EmailRepository extends JpaRepository<Email, Long> {
+public interface EmailRepository extends JpaRepository<ClienteEmail, Long> {
 
     /**
      * Busca todos os emails de um cliente
      * @param clienteId ID do cliente
      * @return Lista de emails
      */
-    List<Email> findByClienteId(Long clienteId);
+    List<ClienteEmail> findByClienteId(Long clienteId);
 
     /**
      * Busca email principal do cliente
@@ -27,7 +27,7 @@ public interface EmailRepository extends JpaRepository<Email, Long> {
      * @param principal true para buscar o principal
      * @return Optional com email principal
      */
-    Optional<Email> findByClienteIdAndPrincipal(Long clienteId, Boolean principal);
+    Optional<ClienteEmail> findByClienteIdAndPrincipal(Long clienteId, Boolean principal);
 
     /**
      * Conta quantos emails o cliente possui
@@ -38,11 +38,11 @@ public interface EmailRepository extends JpaRepository<Email, Long> {
 
     /**
      * Verifica se email já existe para o cliente
-     * @param email Endereço de email
+     * @param enderecoEmail Endereço de email
      * @param clienteId ID do cliente
      * @return true se existir
      */
-    boolean existsByEmailAndClienteId(String email, Long clienteId);
+    boolean existsByEnderecoEmailAndClienteId(String enderecoEmail, Long clienteId);
 
     /**
      * Deleta todos os emails de um cliente

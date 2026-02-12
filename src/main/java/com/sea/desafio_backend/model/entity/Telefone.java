@@ -18,7 +18,7 @@ import javax.validation.constraints.NotBlank;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Telefone {
+public class Telefone extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,7 +33,7 @@ public class Telefone {
     private TipoTelefone tipo;
 
     @NotBlank(message = "Número do telefone é obrigatório")
-    @Column(nullable = false, length = 15)
+    @Column(nullable = false, length = 11) // Persistido SEM máscara (máximo 11 dígitos: DDD + 9 dígitos)
     private String numero;
 
     @Column(nullable = false)

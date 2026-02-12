@@ -17,7 +17,7 @@ import javax.validation.constraints.Size;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Endereco {
+public class Endereco extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,7 +28,7 @@ public class Endereco {
     private Cliente cliente;
 
     @NotBlank(message = "CEP é obrigatório")
-    @Column(nullable = false, length = 9)
+    @Column(nullable = false, length = 8) // Persistido SEM máscara (8 dígitos)
     private String cep;
 
     @NotBlank(message = "Logradouro é obrigatório")

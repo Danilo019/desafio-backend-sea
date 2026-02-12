@@ -1,35 +1,36 @@
 package com.sea.desafio_backend.model.entity;
 
+import com.sea.desafio_backend.model.entity.BaseEntity;
+import com.sea.desafio_backend.model.entity.ClienteEmail;
+import com.sea.desafio_backend.model.entity.Endereco;
+import com.sea.desafio_backend.model.entity.Telefone;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
-// Importante: javax.validation é usado no Spring Boot 2.x (Java 8).
-// Se fosse Spring Boot 3, seria jakarta.validation.
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "clientes")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Cliente {
+@Entity@Table(name = "clientes")
+@Getter@Setter@NoArgsConstructor@AllArgsConstructor@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"endereco", "telefones", "emails"})
+public class Cliente extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include private Long id;
 
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
-    // REGRA DO DESAFIO: Apenas letras, números e espaços
+    @NotBlank(message = "Nome é obrigatorio")
+    @Size(min =3, max =100, message = "Nome deve ter entre3 e100 caracteres")
     @Pattern(regexp = "^[a-zA-Z0-9 áàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]+$", message = "Nome deve conter apenas letras e números")
+
     @Column(nullable = false, length = 100)
     private String nome;
 
@@ -50,24 +51,10 @@ public class Cliente {
     // REGRA: Pelo menos um e-mail
     @NotEmpty(message = "Pelo menos um e-mail deve ser cadastrado")
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Email> emails = new ArrayList<>();
+    private List<ClienteEmail> emails;
 
-    // Auditoria (Excelente adição sua!)
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    {
+        emails = new ArrayList<>();
     }
 
     /* --- Métodos Helper (Essenciais para @OneToMany bidirecional) --- */
@@ -89,12 +76,12 @@ public class Cliente {
         telefone.setCliente(null);
     }
 
-    public void addEmail(Email email) {
+    public void addEmail(ClienteEmail email) {
         emails.add(email);
         email.setCliente(this); // Vincula o cliente ao email
     }
 
-    public void removeEmail(Email email) {
+    public void removeEmail(ClienteEmail email) {
         emails.remove(email);
         email.setCliente(null);
     }

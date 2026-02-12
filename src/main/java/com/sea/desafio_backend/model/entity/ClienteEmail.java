@@ -7,17 +7,12 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 
-/**
- * Entidade Email
- * Relacionamento N:1 com Cliente
- * Mínimo 1 email por cliente
- */
 @Entity
 @Table(name = "emails")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Email {
+public class ClienteEmail extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,8 +25,7 @@ public class Email {
     @NotBlank(message = "Email é obrigatório")
     @javax.validation.constraints.Email(message = "Email inválido")
     @Column(nullable = false, length = 100)
-    private String email;
-
+    private String enderecoEmail;
     @Column(nullable = false)
     private Boolean principal = false;
 }

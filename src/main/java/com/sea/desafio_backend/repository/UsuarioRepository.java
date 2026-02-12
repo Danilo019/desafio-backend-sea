@@ -5,6 +5,7 @@ import com.sea.desafio_backend.model.enums.TipoUsuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -35,4 +36,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @return Optional com usuário se encontrado
      */
     Optional<Usuario> findByUsernameAndTipo(String username, TipoUsuario tipo);
+
+    List<Usuario> findByTipo(TipoUsuario tipo);
 }

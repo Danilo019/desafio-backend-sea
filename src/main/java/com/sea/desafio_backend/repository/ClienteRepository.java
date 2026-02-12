@@ -38,24 +38,34 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     List<Cliente> findByNomeContainingIgnoreCase(String nome);
 
     /**
-     * Busca todos os clientes com seus relacionamentos
-     * Evita N+1 queries carregando tudo de uma vez
+     * Busca todos os clientes com endereço
+     * NOTA: Telefones e Emails devem ser carregados separadamente para evitar MultipleBagFetchException
+     * Hibernate não permite JOIN FETCH de múltiplas coleções List simultaneamente
      */
-    @Query("SELECT DISTINCT c FROM Cliente c " +
-            "LEFT JOIN FETCH c.endereco " +
-            "LEFT JOIN FETCH c.telefones " +
-            "LEFT JOIN FETCH c.emails")
-    List<Cliente> findAllWithRelationships();
+    @Query("SELECT DISTINCT c FROM Cliente c LEFT JOIN FETCH c.endereco")
+    List<Cliente> findAllWithEndereco();
 
     /**
-     * Busca cliente por ID com todos os relacionamentos
+     * Busca cliente por ID com endereço
      * @param id ID do cliente
-     * @return Optional com cliente e relacionamentos
+     * @return Optional com cliente e endereço
      */
-    @Query("SELECT c FROM Cliente c " +
-            "LEFT JOIN FETCH c.endereco " +
-            "LEFT JOIN FETCH c.telefones " +
-            "LEFT JOIN FETCH c.emails " +
-            "WHERE c.id = :id")
-    Optional<Cliente> findByIdWithRelationships(@Param("id") Long id);
+    @Query("SELECT c FROM Cliente c LEFT JOIN FETCH c.endereco WHERE c.id = :id")
+    Optional<Cliente> findByIdWithEndereco(@Param("id") Long id);
+
+    /**
+     * Busca cliente por ID com telefones
+     * @param id ID do cliente
+     * @return Optional com cliente e telefones
+     */
+    @Query("SELECT c FROM Cliente c LEFT JOIN FETCH c.telefones WHERE c.id = :id")
+    Optional<Cliente> findByIdWithTelefones(@Param("id") Long id);
+
+    /**
+     * Busca cliente por ID com emails
+     * @param id ID do cliente
+     * @return Optional com cliente e emails
+     */
+    @Query("SELECT c FROM Cliente c LEFT JOIN FETCH c.emails WHERE c.id = :id")
+    Optional<Cliente> findByIdWithEmails(@Param("id") Long id);
 }
