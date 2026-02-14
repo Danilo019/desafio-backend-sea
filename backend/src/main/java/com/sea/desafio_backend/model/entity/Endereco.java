@@ -17,6 +17,7 @@ import javax.validation.constraints.Size;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.EqualsAndHashCode(callSuper = false)
 public class Endereco extends BaseEntity {
 
     @Id

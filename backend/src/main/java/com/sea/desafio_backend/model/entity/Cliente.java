@@ -19,9 +19,15 @@ import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity@Table(name = "clientes")
-@Getter@Setter
-@NoArgsConstructor@AllArgsConstructor@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Entity
+@Table(name = "clientes", indexes = {
+    @Index(name = "idx_cliente_cpf", columnList = "cpf", unique = true)
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(exclude = {"endereco", "telefones", "emails"})
 public class Cliente extends BaseEntity {
 

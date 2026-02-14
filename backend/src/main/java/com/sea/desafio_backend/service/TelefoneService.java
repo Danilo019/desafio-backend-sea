@@ -1,7 +1,6 @@
 package com.sea.desafio_backend.service;
 
 import com.sea.desafio_backend.exception.ResourceNotFoundException;
-
 import com.sea.desafio_backend.model.entity.Telefone;
 import com.sea.desafio_backend.model.enums.TipoTelefone;
 import com.sea.desafio_backend.repository.TelefoneRepository;
@@ -10,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service para gerenciamento de Telefones
@@ -30,21 +30,33 @@ public class TelefoneService {
     /**
      * Cria um novo telefone
      * Remove máscara do número antes de salvar
+     * ✅ MELHORIA: Primeiro telefone automaticamente é principal
+     * ✅ MELHORIA: Valida duplicidade de número
      *
      * @param telefone Telefone a ser criado
      * @return Telefone salvo
      */
     @Transactional
     public Telefone criarTelefone(Telefone telefone) {
-        log.info("Criando novo telefone para cliente ID: {}", telefone.getCliente().getId());
+        Long clienteId = telefone.getCliente().getId();
+        log.info("Criando novo telefone para cliente ID: {}", clienteId);
 
         // Remove máscara do telefone antes de salvar
         String numeroSemMascara = removerMascaraTelefone(telefone.getNumero());
         telefone.setNumero(numeroSemMascara);
 
-        // Se marcar como principal, desmarca os outros
-        if (Boolean.TRUE.equals(telefone.getPrincipal())) {
-            desmarcarTelefonesPrincipais(telefone.getCliente().getId());
+        // ✅ MELHORIA: Valida duplicidade
+        validarTelefoneDuplicado(clienteId, numeroSemMascara, null);
+
+        // ✅ MELHORIA: Regra de Negócio - Primeiro telefone DEVE ser o principal
+        long totalTelefones = contarTelefones(clienteId);
+        if (totalTelefones == 0) {
+            telefone.setPrincipal(true);
+        } else if (Boolean.TRUE.equals(telefone.getPrincipal())) {
+            // Se já existem e quer ser o principal, desmarca os outros
+            desmarcarTelefonesPrincipais(clienteId);
+        } else {
+            telefone.setPrincipal(false); // Null safety
         }
 
         Telefone telefoneSalvo = telefoneRepository.save(telefone);
@@ -103,6 +115,7 @@ public class TelefoneService {
 
     /**
      * Atualiza dados do telefone
+     * ✅ MELHORIA: Valida duplicidade ao mudar número
      *
      * @param id ID do telefone
      * @param telefoneAtualizado Dados atualizados
@@ -113,16 +126,23 @@ public class TelefoneService {
         log.info("Atualizando telefone ID: {}", id);
 
         Telefone telefoneExistente = buscarPorId(id);
+        Long clienteId = telefoneExistente.getCliente().getId();
 
         // Remove máscara antes de salvar
         String numeroSemMascara = removerMascaraTelefone(telefoneAtualizado.getNumero());
+        
+        // ✅ MELHORIA: Valida duplicidade se o número mudou
+        if (!telefoneExistente.getNumero().equals(numeroSemMascara)) {
+            validarTelefoneDuplicado(clienteId, numeroSemMascara, id);
+        }
+        
         telefoneExistente.setNumero(numeroSemMascara);
         telefoneExistente.setTipo(telefoneAtualizado.getTipo());
 
         // Se marcar como principal, desmarca os outros
         if (Boolean.TRUE.equals(telefoneAtualizado.getPrincipal()) &&
                 !Boolean.TRUE.equals(telefoneExistente.getPrincipal())) {
-            desmarcarTelefonesPrincipais(telefoneExistente.getCliente().getId());
+            desmarcarTelefonesPrincipais(clienteId);
         }
 
         telefoneExistente.setPrincipal(telefoneAtualizado.getPrincipal());
@@ -159,6 +179,7 @@ public class TelefoneService {
     /**
      * Deleta telefone
      * Valida se não é o último telefone do cliente
+     * ✅ MELHORIA: Elege automaticamente novo principal se deletar o principal
      *
      * @param id ID do telefone
      * @throws IllegalArgumentException se for o último telefone
@@ -169,14 +190,30 @@ public class TelefoneService {
 
         Telefone telefone = buscarPorId(id);
         Long clienteId = telefone.getCliente().getId();
+        boolean eraPrincipal = Boolean.TRUE.equals(telefone.getPrincipal());
 
-        // Valida se não é o último telefone (cliente precisa ter pelo menos 1)
+        // 1. Valida se não é o último telefone (cliente precisa ter pelo menos 1)
         long totalTelefones = contarTelefones(clienteId);
         if (totalTelefones <= 1) {
             throw new IllegalArgumentException("Cliente deve ter pelo menos um telefone cadastrado");
         }
 
-        telefoneRepository.deleteById(id);
+        // 2. Deleta o telefone
+        telefoneRepository.delete(telefone);
+        telefoneRepository.flush(); // ✅ Força exclusão no banco agora
+
+        // 3. ✅ MELHORIA: Se deletou o principal, elege novo automaticamente
+        if (eraPrincipal) {
+            log.info("Telefone principal deletado. Elegendo um novo principal automaticamente.");
+            List<Telefone> restantes = listarPorCliente(clienteId);
+            if (!restantes.isEmpty()) {
+                Telefone novoPrincipal = restantes.get(0);
+                novoPrincipal.setPrincipal(true);
+                telefoneRepository.save(novoPrincipal);
+                log.info("Novo telefone principal eleito: ID {}", novoPrincipal.getId());
+            }
+        }
+
         log.info("Telefone deletado com sucesso. ID: {}", id);
     }
 
@@ -218,18 +255,34 @@ public class TelefoneService {
     }
 
     /**
-     * Desmarca todos os telefones principais de um cliente
-     * Usado antes de marcar um novo como principal
+     * ✅ PERFORMANCE: Desmarca todos os telefones principais em 1 UPDATE
+     * Evita N+1 Problem (buscar todos + loop de saves)
+     * Requer método no Repository com @Modifying
      *
      * @param clienteId ID do cliente
      */
     private void desmarcarTelefonesPrincipais(Long clienteId) {
-        List<Telefone> telefones = listarPorCliente(clienteId);
-        telefones.forEach(t -> {
-            if (Boolean.TRUE.equals(t.getPrincipal())) {
-                t.setPrincipal(false);
-                telefoneRepository.save(t);
+        log.debug("Desmarcando telefones principais do cliente ID: {}", clienteId);
+        telefoneRepository.desmarcarTodosPrincipaisPorCliente(clienteId);
+    }
+
+    /**
+     * ✅ PERFORMANCE: Valida duplicidade de forma otimizada (1 query)
+     * Requer método no Repository: Optional<Telefone> findByClienteIdAndNumero(Long clienteId, String numero)
+     *
+     * @param clienteId ID do cliente
+     * @param numero Número do telefone (sem máscara)
+     * @param telefoneIdIgnorar ID do telefone a ignorar (útil em updates)
+     */
+    private void validarTelefoneDuplicado(Long clienteId, String numero, Long telefoneIdIgnorar) {
+        Optional<Telefone> telefoneExistenteOpt = telefoneRepository.findByClienteIdAndNumero(clienteId, numero);
+
+        if (telefoneExistenteOpt.isPresent()) {
+            Telefone telefoneExistente = telefoneExistenteOpt.get();
+            // Se for criação (ignorar null) ou se o ID encontrado for diferente do ID atual
+            if (telefoneIdIgnorar == null || !telefoneExistente.getId().equals(telefoneIdIgnorar)) {
+                throw new IllegalArgumentException("Este número de telefone já está cadastrado para este cliente.");
             }
-        });
+        }
     }
 }

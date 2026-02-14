@@ -1,0 +1,628 @@
+{
+	"info": {
+		"_postman_id": "desafio-backend-sea",
+		"name": "Desafio Backend SEA - API",
+		"description": "Collection completa da API REST do Desafio Backend\n\n**Base URL:** http://localhost:8080\n**Banco de Dados:** H2 em memória\n**Documentação:** README.md",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Clientes",
+			"item": [
+				{
+					"name": "Criar Cliente Completo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"João da Silva\",\n  \"cpf\": \"123.456.789-00\",\n  \"endereco\": {\n    \"cep\": \"01001-000\",\n    \"logradouro\": \"Praça da Sé\",\n    \"complemento\": \"Lado ímpar\",\n    \"bairro\": \"Sé\",\n    \"cidade\": \"São Paulo\",\n    \"uf\": \"SP\"\n  },\n  \"telefones\": [\n    {\n      \"numero\": \"(11) 98765-4321\",\n      \"tipo\": \"CELULAR\",\n      \"principal\": true\n    }\n  ],\n  \"emails\": [\n    {\n      \"enderecoEmail\": \"joao@exemplo.com\",\n      \"principal\": true\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/clientes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes"
+							]
+						},
+						"description": "Cria um cliente completo com endereço, telefones e emails em cascata"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Todos os Clientes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/clientes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes"
+							]
+						},
+						"description": "Lista todos os clientes cadastrados"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Cliente por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/clientes/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes",
+								"1"
+							]
+						},
+						"description": "Busca cliente específico por ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Cliente por CPF",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/clientes/cpf/123.456.789-00",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes",
+								"cpf",
+								"123.456.789-00"
+							]
+						},
+						"description": "Busca cliente por CPF (com máscara)"
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Cliente",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/clientes/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes",
+								"1"
+							]
+						},
+						"description": "Deleta cliente e todos os relacionamentos em cascata"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gerenciamento de Clientes"
+		},
+		{
+			"name": "2. Emails",
+			"item": [
+				{
+					"name": "Adicionar Email ao Cliente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"enderecoEmail\": \"novo@exemplo.com\",\n  \"principal\": false\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/clientes/1/emails",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes",
+								"1",
+								"emails"
+							]
+						},
+						"description": "Adiciona um novo email ao cliente"
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Email",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"enderecoEmail\": \"atualizado@exemplo.com\",\n  \"principal\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/emails/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"emails",
+								"1"
+							]
+						},
+						"description": "Atualiza dados de um email existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Marcar Email como Principal",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/emails/1/principal",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"emails",
+								"1",
+								"principal"
+							]
+						},
+						"description": "Marca email como principal (desmarca outros automaticamente)"
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Email",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/emails/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"emails",
+								"1"
+							]
+						},
+						"description": "Remove email do cliente"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gerenciamento de Emails"
+		},
+		{
+			"name": "3. Telefones",
+			"item": [
+				{
+					"name": "Adicionar Telefone ao Cliente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"numero\": \"(11) 91234-5678\",\n  \"tipo\": \"CELULAR\",\n  \"principal\": false\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/clientes/1/telefones",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes",
+								"1",
+								"telefones"
+							]
+						},
+						"description": "Adiciona um novo telefone ao cliente"
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Telefone",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"numero\": \"(11) 99999-9999\",\n  \"tipo\": \"CELULAR\",\n  \"principal\": false\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/telefones/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"telefones",
+								"1"
+							]
+						},
+						"description": "Atualiza dados de um telefone existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Marcar Telefone como Principal",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/telefones/1/principal",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"telefones",
+								"1",
+								"principal"
+							]
+						},
+						"description": "Marca telefone como principal (desmarca outros automaticamente)"
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Telefone",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/telefones/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"telefones",
+								"1"
+							]
+						},
+						"description": "Remove telefone do cliente"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gerenciamento de Telefones (✨ NOVO)"
+		},
+		{
+			"name": "4. Endereços",
+			"item": [
+				{
+					"name": "Consultar CEP (ViaCEP)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/cep/01001000",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"cep",
+								"01001000"
+							]
+						},
+						"description": "Consulta CEP na API ViaCEP (aceita com ou sem máscara)"
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar CEP - Rio de Janeiro",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/cep/20040-020",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"cep",
+								"20040-020"
+							]
+						},
+						"description": "Exemplo: Centro, Rio de Janeiro"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Endereço por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/enderecos/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"enderecos",
+								"1"
+							]
+						},
+						"description": "Busca endereço específico por ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Endereço",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cep\": \"01310-100\",\n  \"logradouro\": \"Avenida Paulista\",\n  \"complemento\": \"Próximo ao MASP\",\n  \"bairro\": \"Bela Vista\",\n  \"cidade\": \"São Paulo\",\n  \"uf\": \"SP\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/enderecos/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"enderecos",
+								"1"
+							]
+						},
+						"description": "Atualiza dados do endereço"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gerenciamento de Endereços e consulta ViaCEP (✨ NOVO)"
+		},
+		{
+			"name": "5. Testes - Login",
+			"item": [
+				{
+					"name": "Login - Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123qwe!@#\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/test/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"test",
+								"login"
+							]
+						},
+						"description": "Testa login com usuário admin"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Padrão",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"padrao\",\n  \"password\": \"123qwe123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/test/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"test",
+								"login"
+							]
+						},
+						"description": "Testa login com usuário padrão"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Usuários",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/test/usuarios",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"test",
+								"usuarios"
+							]
+						},
+						"description": "Lista todos os usuários (senhas ocultas)"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de teste para Login (temporários)"
+		},
+		{
+			"name": "6. Cenários Completos",
+			"item": [
+				{
+					"name": "1. Criar Cliente - Maria Santos",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"Maria Santos\",\n  \"cpf\": \"987.654.321-00\",\n  \"endereco\": {\n    \"cep\": \"20040-020\",\n    \"logradouro\": \"Avenida Rio Branco\",\n    \"complemento\": \"Centro Empresarial\",\n    \"bairro\": \"Centro\",\n    \"cidade\": \"Rio de Janeiro\",\n    \"uf\": \"RJ\"\n  },\n  \"telefones\": [\n    {\n      \"numero\": \"(21) 98888-8888\",\n      \"tipo\": \"CELULAR\",\n      \"principal\": true\n    },\n    {\n      \"numero\": \"(21) 3333-3333\",\n      \"tipo\": \"COMERCIAL\",\n      \"principal\": false\n    }\n  ],\n  \"emails\": [\n    {\n      \"enderecoEmail\": \"maria@exemplo.com\",\n      \"principal\": true\n    },\n    {\n      \"enderecoEmail\": \"maria.trabalho@empresa.com\",\n      \"principal\": false\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/clientes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes"
+							]
+						},
+						"description": "Cenário completo: Cliente com 2 telefones e 2 emails"
+					},
+					"response": []
+				},
+				{
+					"name": "2. Criar Cliente - Pedro Costa",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"Pedro Costa\",\n  \"cpf\": \"111.222.333-44\",\n  \"endereco\": {\n    \"cep\": \"30130-010\",\n    \"logradouro\": \"Avenida Afonso Pena\",\n    \"complemento\": \"Ed. Comercial\",\n    \"bairro\": \"Centro\",\n    \"cidade\": \"Belo Horizonte\",\n    \"uf\": \"MG\"\n  },\n  \"telefones\": [\n    {\n      \"numero\": \"(31) 97777-7777\",\n      \"tipo\": \"CELULAR\",\n      \"principal\": true\n    }\n  ],\n  \"emails\": [\n    {\n      \"enderecoEmail\": \"pedro@exemplo.com\",\n      \"principal\": true\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/clientes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes"
+							]
+						},
+						"description": "Cenário completo: Cliente de Belo Horizonte"
+					},
+					"response": []
+				}
+			],
+			"description": "Cenários completos para testar fluxo completo"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}

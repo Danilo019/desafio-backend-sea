@@ -14,10 +14,15 @@ import javax.validation.constraints.NotBlank;
  * Mínimo 1 telefone por cliente
  */
 @Entity
-@Table(name = "telefones")
+@Table(name = "telefones", indexes = {
+    @Index(name = "idx_telefone_cliente_id", columnList = "cliente_id"),
+    @Index(name = "idx_telefone_numero", columnList = "numero"),
+    @Index(name = "idx_telefone_principal", columnList = "cliente_id, principal")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.EqualsAndHashCode(callSuper = false)
 public class Telefone extends BaseEntity {
 
     @Id

@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @MappedSuperclass
+@lombok.EqualsAndHashCode
 public abstract class BaseEntity {
 
     @CreationTimestamp

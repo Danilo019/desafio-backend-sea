@@ -8,10 +8,15 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 
 @Entity
-@Table(name = "emails")
+@Table(name = "emails", indexes = {
+    @Index(name = "idx_email_cliente_id", columnList = "cliente_id"),
+    @Index(name = "idx_email_endereco", columnList = "enderecoEmail"),
+    @Index(name = "idx_email_principal", columnList = "cliente_id, principal")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.EqualsAndHashCode(callSuper = false)
 public class ClienteEmail extends BaseEntity {
 
     @Id

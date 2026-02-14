@@ -3,6 +3,9 @@ package com.sea.desafio_backend.repository;
 import com.sea.desafio_backend.model.entity.Telefone;
 import com.sea.desafio_backend.model.enums.TipoTelefone;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -59,5 +62,23 @@ public interface TelefoneRepository extends JpaRepository<Telefone, Long> {
      * @return true se existir
      */
     boolean existsByNumeroAndClienteId(String numero, Long clienteId);
+
+    /**
+     * ✅ PERFORMANCE: Busca telefone específico de forma otimizada (1 query)
+     * Usado para validação de duplicidade sem carregar todos os telefones
+     * @param clienteId ID do cliente
+     * @param numero Número do telefone (sem máscara)
+     * @return Optional com telefone encontrado
+     */
+    Optional<Telefone> findByClienteIdAndNumero(Long clienteId, String numero);
+
+    /**
+     * ✅ PERFORMANCE: Desmarca todos os telefones principais em 1 única query UPDATE
+     * Evita N+1 Problem (buscar todos + loop de saves)
+     * @param clienteId ID do cliente
+     */
+    @Modifying
+    @Query("UPDATE Telefone t SET t.principal = false WHERE t.cliente.id = :clienteId")
+    void desmarcarTodosPrincipaisPorCliente(@Param("clienteId") Long clienteId);
 
 }

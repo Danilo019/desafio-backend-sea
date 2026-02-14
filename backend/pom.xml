@@ -111,9 +111,12 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
+			<configuration>
+				<mainClass>com.sea.desafio_backend.DesafioBackendApplication</mainClass>
+			</configuration>
+		</plugin>
 
-		</plugins>
+	</plugins>
 	</build>
 
 </project>
