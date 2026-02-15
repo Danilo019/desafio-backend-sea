@@ -1,10 +1,17 @@
 package com.sea.desafio_backend.controller;
 
 import com.sea.desafio_backend.dto.request.EnderecoRequest;
+import com.sea.desafio_backend.dto.response.ErrorResponse;
 import com.sea.desafio_backend.dto.response.ViaCepResponse;
 import com.sea.desafio_backend.model.entity.Endereco;
 import com.sea.desafio_backend.service.EnderecoService;
 import com.sea.desafio_backend.service.ViaCepService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +29,7 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("/api")
 @Slf4j
+@Tag(name = "Endereços", description = "API para consulta de CEP via ViaCEP e gerenciamento de endereços")
 public class EnderecoController {
 
     private final EnderecoService enderecoService;
@@ -59,7 +67,9 @@ public class EnderecoController {
      * @return 200 OK com dados do endereço
      */
     @GetMapping("/enderecos/{id}")
-    public ResponseEntity<Endereco> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<Endereco> buscarPorId(
+            @Parameter(description = "ID do endereço", required = true, example = "1")
+            @PathVariable Long id) {
         
         log.info("GET /api/enderecos/{} - Buscando endereço", id);
         
@@ -78,6 +88,7 @@ public class EnderecoController {
      */
     @PutMapping("/enderecos/{id}")
     public ResponseEntity<Endereco> atualizarEndereco(
+            @Parameter(description = "ID do endereço", required = true, example = "1")
             @PathVariable Long id,
             @Valid @RequestBody EnderecoRequest request) {
         
