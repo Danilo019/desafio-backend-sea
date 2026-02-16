@@ -1,0 +1,464 @@
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import Layout from '../../components/Layout';
+import { clienteService } from '../../services/clienteService';
+import { authService } from '../../services/authService';
+import { toast } from 'react-toastify';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaEye, FaUsers } from 'react-icons/fa';
+import { colors, borderRadius, spacing, shadows } from '../../styles/theme';
+import ClienteModal from '../../components/ClienteModal';
+
+const Container = styled.div`
+  animation: fadeIn 0.5s ease-in-out;
+`;
+
+const ActionBar = styled.div`
+  background: ${colors.cardBg};
+  border-radius: ${borderRadius.xl};
+  padding: ${spacing.xl};
+  margin-bottom: ${spacing.xl};
+  display: flex;
+  gap: ${spacing.md};
+  align-items: center;
+  flex-wrap: wrap;
+  box-shadow: ${shadows.md};
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  min-width: 250px;
+  padding: ${spacing.md} ${spacing.md} ${spacing.md} 40px;
+  background: ${colors.inputBg};
+  border: 2px solid ${colors.inputBorder};
+  border-radius: ${borderRadius.md};
+  color: ${colors.textPrimary};
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: ${colors.accent};
+  }
+
+  &::placeholder {
+    color: ${colors.textMuted};
+  }
+`;
+
+const SearchWrapper = styled.div`
+  position: relative;
+  flex: 1;
+  
+  svg {
+    position: absolute;
+    left: ${spacing.md};
+    top: 50%;
+    transform: translateY(-50%);
+    color: ${colors.textSecondary};
+  }
+`;
+
+const Button = styled.button`
+  padding: ${spacing.md} ${spacing.lg};
+  background: ${props => props.$variant === 'primary' 
+    ? `linear-gradient(135deg, ${colors.accent} 0%, ${colors.accentLight} 100%)`
+    : props.$variant === 'danger'
+    ? colors.error
+    : colors.primaryLight};
+  border: none;
+  border-radius: ${borderRadius.md};
+  color: ${colors.white};
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: ${spacing.sm};
+  box-shadow: ${props => props.$variant === 'primary' ? '0 4px 12px rgba(255, 152, 0, 0.3)' : 'none'};
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: ${props => props.$variant === 'primary' 
+      ? '0 6px 16px rgba(255, 152, 0, 0.4)'
+      : '0 4px 12px rgba(0, 0, 0, 0.2)'};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const Table = styled.div`
+  background: ${colors.cardBg};
+  border-radius: ${borderRadius.xl};
+  overflow: hidden;
+  box-shadow: ${shadows.md};
+`;
+
+const TableHeader = styled.div`
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 2fr 1fr;
+  gap: ${spacing.md};
+  padding: ${spacing.lg} ${spacing.xl};
+  background: ${colors.primaryLight};
+  font-weight: 600;
+  font-size: 14px;
+  color: ${colors.textPrimary};
+`;
+
+const TableRow = styled.div`
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 2fr 1fr;
+  gap: ${spacing.md};
+  padding: ${spacing.lg} ${spacing.xl};
+  border-bottom: 1px solid ${colors.border};
+  font-size: 14px;
+  color: ${colors.textSecondary};
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: ${colors.cardBgHover};
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const TableCell = styled.div`
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const Actions = styled.div`
+  display: flex;
+  gap: ${spacing.sm};
+`;
+
+const IconButton = styled.button`
+  padding: ${spacing.sm};
+  background: ${props => props.$variant === 'danger' ? colors.error : colors.primaryLight};
+  border: none;
+  border-radius: ${borderRadius.sm};
+  color: ${colors.white};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const EmptyState = styled.div`
+  padding: ${spacing.xxl};
+  text-align: center;
+  color: ${colors.textSecondary};
+  
+  svg {
+    font-size: 64px;
+    margin-bottom: ${spacing.lg};
+    opacity: 0.3;
+  }
+  
+  h3 {
+    font-size: 20px;
+    margin-bottom: ${spacing.sm};
+    color: ${colors.textPrimary};
+  }
+  
+  p {
+    font-size: 14px;
+  }
+`;
+
+const Pagination = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: ${spacing.md};
+  padding: ${spacing.xl};
+  background: ${colors.cardBg};
+  border-radius: ${borderRadius.xl};
+  margin-top: ${spacing.xl};
+  box-shadow: ${shadows.md};
+`;
+
+const PageButton = styled.button`
+  padding: ${spacing.sm} ${spacing.md};
+  background: ${props => props.$active ? colors.accent : colors.primaryLight};
+  border: none;
+  border-radius: ${borderRadius.sm};
+  color: ${colors.white};
+  font-weight: ${props => props.$active ? '600' : '400'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 40px;
+
+  &:hover:not(:disabled) {
+    background: ${props => props.$active ? colors.accent : colors.primaryLight};
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const Loading = styled.div`
+  padding: ${spacing.xxl};
+  text-align: center;
+  color: ${colors.textSecondary};
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid ${colors.primaryLight};
+    border-top-color: ${colors.accent};
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto ${spacing.md};
+  }
+`;
+
+function Clientes() {
+  const [clientes, setClientes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCliente, setEditingCliente] = useState(null);
+  const [viewMode, setViewMode] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const isAdmin = authService.isAdmin();
+
+  useEffect(() => {
+    loadClientes();
+  }, [page]);
+
+  const loadClientes = async () => {
+    try {
+      setLoading(true);
+      const response = await clienteService.getAll(page, 10);
+      setClientes(response.content || []);
+      setTotalPages(response.totalPages || 0);
+    } catch (error) {
+      toast.error('Erro ao carregar clientes');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdd = () => {
+    setEditingCliente(null);
+    setViewMode(false);
+    setModalOpen(true);
+  };
+
+  const handleEdit = (cliente) => {
+    if (!isAdmin) {
+      toast.warning('Apenas administradores podem editar clientes');
+      return;
+    }
+    setEditingCliente(cliente);
+    setViewMode(false);
+    setModalOpen(true);
+  };
+
+  const handleView = (cliente) => {
+    setEditingCliente(cliente);
+    setViewMode(true);
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!isAdmin) {
+      toast.warning('Apenas administradores podem excluir clientes');
+      return;
+    }
+
+    if (!window.confirm('Tem certeza que deseja excluir este cliente?')) {
+      return;
+    }
+
+    try {
+      await clienteService.delete(id);
+      toast.success('Cliente excluído com sucesso!');
+      loadClientes();
+    } catch (error) {
+      toast.error('Erro ao excluir cliente');
+      console.error(error);
+    }
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setEditingCliente(null);
+    setViewMode(false);
+  };
+
+  const handleModalSave = () => {
+    loadClientes();
+    handleModalClose();
+  };
+
+  const formatCPF = (cpf) => {
+    if (!cpf) return '';
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
+
+  const filteredClientes = clientes.filter(cliente => 
+    cliente.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cliente.cpf?.includes(searchTerm) ||
+    cliente.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <Layout
+      title="Gestão de Clientes"
+      subtitle="Cadastre e gerencie os clientes do sistema"
+    >
+      <Container>
+        <ActionBar>
+          <SearchWrapper>
+            <FaSearch />
+            <SearchInput
+              type="text"
+              placeholder="Buscar por nome, CPF ou e-mail..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </SearchWrapper>
+          {isAdmin && (
+            <Button $variant="primary" onClick={handleAdd}>
+              <FaPlus />
+              Novo Cliente
+            </Button>
+          )}
+        </ActionBar>
+
+        <Table>
+          <TableHeader>
+            <div>Nome</div>
+            <div>CPF</div>
+            <div>Telefone</div>
+            <div>E-mail</div>
+            <div>Ações</div>
+          </TableHeader>
+          
+          {loading ? (
+            <Loading>
+              <div className="spinner"></div>
+              <p>Carregando clientes...</p>
+            </Loading>
+          ) : filteredClientes.length === 0 ? (
+            <EmptyState>
+              <FaUsers />
+              <h3>Nenhum cliente encontrado</h3>
+              <p>
+                {searchTerm 
+                  ? 'Tente ajustar os termos de busca'
+                  : 'Comece adicionando um novo cliente'}
+              </p>
+            </EmptyState>
+          ) : (
+            filteredClientes.map((cliente) => (
+              <TableRow key={cliente.id}>
+                <TableCell style={{ color: colors.textPrimary, fontWeight: '500' }}>
+                  {cliente.nome}
+                </TableCell>
+                <TableCell>{formatCPF(cliente.cpf)}</TableCell>
+                <TableCell>
+                  {cliente.telefones && cliente.telefones.length > 0 
+                    ? cliente.telefones[0].numero 
+                    : '-'}
+                </TableCell>
+                <TableCell>
+                  {cliente.emails && cliente.emails.length > 0 
+                    ? cliente.emails[0].email 
+                    : '-'}
+                </TableCell>
+                <TableCell>
+                  <Actions>
+                    <IconButton onClick={() => handleView(cliente)} title="Visualizar">
+                      <FaEye />
+                    </IconButton>
+                    {isAdmin && (
+                      <>
+                        <IconButton onClick={() => handleEdit(cliente)} title="Editar">
+                          <FaEdit />
+                        </IconButton>
+                        <IconButton 
+                          $variant="danger" 
+                          onClick={() => handleDelete(cliente.id)}
+                          title="Excluir"
+                        >
+                          <FaTrash />
+                        </IconButton>
+                      </>
+                    )}
+                  </Actions>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </Table>
+
+        {totalPages > 1 && (
+          <Pagination>
+            <PageButton 
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+            >
+              Anterior
+            </PageButton>
+            
+            {[...Array(totalPages)].map((_, index) => (
+              <PageButton
+                key={index}
+                $active={page === index}
+                onClick={() => setPage(index)}
+              >
+                {index + 1}
+              </PageButton>
+            ))}
+            
+            <PageButton 
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+            >
+              Próximo
+            </PageButton>
+          </Pagination>
+        )}
+      </Container>
+
+      {modalOpen && (
+        <ClienteModal
+          cliente={editingCliente}
+          viewMode={viewMode}
+          onClose={handleModalClose}
+          onSave={handleModalSave}
+        />
+      )}
+    </Layout>
+  );
+}
+
+export default Clientes;

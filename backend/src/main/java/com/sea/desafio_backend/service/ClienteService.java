@@ -12,6 +12,8 @@ import com.sea.desafio_backend.model.entity.Telefone;
 import com.sea.desafio_backend.repository.ClienteRepository;
 import com.sea.desafio_backend.util.CpfUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -162,6 +164,11 @@ public class ClienteService {
         return clienteRepository.findAll();
     }
 
+    public Page<Cliente> listarTodosPaginado(Pageable pageable) {
+        log.info("Listando clientes paginado - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        return clienteRepository.findAll(pageable);
+    }
+
     // ==================== ATUALIZAR CLIENTE ====================
 
     @Transactional
@@ -182,6 +189,58 @@ public class ClienteService {
 
         Cliente clienteSalvo = clienteRepository.save(clienteExistente);
         log.info("Cliente atualizado com sucesso. ID: {}", id);
+
+        return clienteSalvo;
+    }
+
+    @Transactional
+    public Cliente atualizarClienteCompleto(Long id, ClienteRequest request) {
+        log.info("Atualizando cliente completo ID: {}", id);
+
+        Cliente clienteExistente = buscarPorId(id);
+
+        // Valida e atualiza CPF se houver alteração
+        String novoCpf = validarEProcessarCpf(request.getCpf(), id);
+        clienteExistente.setCpf(novoCpf);
+        
+        // Atualiza nome
+        clienteExistente.setNome(request.getNome());
+
+        // Atualiza endereço
+        if (request.getEndereco() != null) {
+            if (clienteExistente.getEndereco() != null) {
+                // Atualiza endereço existente
+                Endereco enderecoExistente = clienteExistente.getEndereco();
+                enderecoExistente.setCep(enderecoService.removerMascaraCEP(request.getEndereco().getCep()));
+                enderecoExistente.setLogradouro(request.getEndereco().getLogradouro());
+                enderecoExistente.setComplemento(request.getEndereco().getComplemento());
+                enderecoExistente.setBairro(request.getEndereco().getBairro());
+                enderecoExistente.setCidade(request.getEndereco().getCidade());
+                enderecoExistente.setUf(request.getEndereco().getUf());
+            } else {
+                // Cria novo endereço
+                clienteExistente.setEndereco(converterEndereco(request, clienteExistente));
+            }
+        }
+
+        // Atualiza telefones - remove os antigos e adiciona os novos
+        if (request.getTelefones() != null) {
+            clienteExistente.getTelefones().clear();
+            if (!request.getTelefones().isEmpty()) {
+                clienteExistente.getTelefones().addAll(converterTelefones(request, clienteExistente));
+            }
+        }
+
+        // Atualiza emails - remove os antigos e adiciona os novos
+        if (request.getEmails() != null) {
+            clienteExistente.getEmails().clear();
+            if (!request.getEmails().isEmpty()) {
+                clienteExistente.getEmails().addAll(converterEmails(request, clienteExistente));
+            }
+        }
+
+        Cliente clienteSalvo = clienteRepository.save(clienteExistente);
+        log.info("Cliente completo atualizado com sucesso. ID: {}", id);
 
         return clienteSalvo;
     }

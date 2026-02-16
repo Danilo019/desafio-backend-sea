@@ -1,9 +1,10 @@
-# 🚀 Desafio Backend SEA - API REST de Gestão de Clientes
+# 🚀 Desafio Backend SEA - Sistema Completo de Gestão de Clientes
 
-> API RESTful completa para gerenciamento de clientes com integração ViaCEP, validações robustas e **181 testes automatizados** com **93-99% de cobertura** nas camadas críticas.
+> Sistema Full Stack com API RESTful (Spring Boot) + Frontend moderno (React) para gerenciamento de clientes, com integração ViaCEP, autenticação JWT, validações robustas e **181 testes automatizados** com **93-99% de cobertura** nas camadas críticas.
 
 [![Java](https://img.shields.io/badge/Java-8-orange?logo=java)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7.18-brightgreen?logo=spring-boot)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
 [![Tests](https://img.shields.io/badge/Tests-181%20passing-success?logo=junit5)](backend/TESTES.md)
 [![Coverage](https://img.shields.io/badge/Coverage-43%25%20(93%25%20Services)-blue?logo=jacoco)]()
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](Dockerfile)
@@ -12,14 +13,24 @@
 
 ## 📋 Sobre o Projeto
 
-Sistema backend desenvolvido como desafio técnico para a **SEA Tecnologia**, implementando uma API REST completa para gestão de cadastro de clientes com:
+Sistema **Full Stack** desenvolvido como desafio técnico para a **SEA Tecnologia**, implementando:
 
-- ✅ **CRUD completo** de clientes, telefones, emails e endereços
-- ✅ **Integração com API ViaCEP** para consulta de endereços
+### 🔧 Backend (Spring Boot)
+- ✅ **API REST completa** de clientes, telefones, emails e endereços
+- ✅ **Autenticação JWT** com controle de acesso (Admin/User)
+- ✅ **Integração ViaCEP** para consulta de endereços
 - ✅ **Validações robustas** com Bean Validation
 - ✅ **Documentação Swagger/OpenAPI** interativa
 - ✅ **181 testes automatizados** (93% Services, 99% Controllers)
-- ✅ **Pronto para produção** (Docker + PostgreSQL)
+
+### 🎨 Frontend (React)
+- ✅ **Interface moderna** com as cores da SEA Tecnologia
+- ✅ **CRUD completo** de clientes com validações
+- ✅ **Autenticação** com JWT e proteção de rotas
+- ✅ **Dashboard** com estatísticas e informações
+- ✅ **Máscaras automáticas** para CPF, CEP e telefone
+- ✅ **Consulta CEP** automática com preenchimento de endereço
+- ✅ **Design responsivo** e animações suaves
 
 ---
 
@@ -68,13 +79,25 @@ Sistema backend desenvolvido como desafio técnico para a **SEA Tecnologia**, im
 
 ## 🚀 Tecnologias Utilizadas
 
-### Backend Core
+### Backend
 - **Java 8** - Compatibilidade ampla
 - **Spring Boot 2.7.18** - Framework enterprise
+- **Spring Security** - Autenticação JWT
 - **Spring Data JPA** - Persistência
 - **Hibernate** - ORM
 - **PostgreSQL** - Produção
 - **H2 Database** - Desenvolvimento/Testes
+
+### Frontend
+- **React 18** - Biblioteca UI moderna
+- **React Router DOM** - Navegação SPA
+- **Styled Components** - CSS-in-JS
+- **Axios** - Cliente HTTP
+- **React Hook Form** - Gerenciamento de formulários
+- **React Input Mask** - Máscaras para inputs
+- **React Toastify** - Notificações
+- **React Icons** - Ícones
+- **Vite** - Build tool
 
 ### Validação & Documentação
 - **Bean Validation** - Validações declarativas
@@ -110,7 +133,7 @@ desafio-backend-sea/
 │   │   │   │   ├── model/entity/      # Entidades JPA
 │   │   │   │   ├── dto/               # Request/Response DTOs
 │   │   │   │   ├── exception/         # Tratamento de erros
-│   │   │   │   └── config/            # Configurações
+│   │   │   │   └── config/            # Configurações (Security, Swagger)
 │   │   │   └── resources/
 │   │   │       ├── application.properties           # Config principal
 │   │   │       ├── application-dev.properties       # Dev (H2)
@@ -126,9 +149,36 @@ desafio-backend-sea/
 │   ├── Dockerfile                     # Build multi-stage
 │   └── TESTES.md                      # Documentação técnica de testes
 │
+├── frontend/
+│   ├── src/
+│   │   ├── components/                # Componentes reutilizáveis
+│   │   │   ├── Layout/               # Layout com sidebar
+│   │   │   ├── PrivateRoute/         # Proteção de rotas
+│   │   │   └── ClienteModal/         # Modal CRUD
+│   │   ├── pages/                    # Páginas da aplicação
+│   │   │   ├── Login/                # Tela de login
+│   │   │   ├── Dashboard/            # Dashboard principal
+│   │   │   └── Clientes/             # CRUD de clientes
+│   │   ├── services/                 # Serviços de API
+│   │   │   ├── api.js               # Configuração Axios
+│   │   │   ├── authService.js       # Autenticação JWT
+│   │   │   └── clienteService.js    # CRUD clientes
+│   │   ├── styles/                   # Estilos globais
+│   │   │   ├── theme.js             # Cores SEA Tecnologia
+│   │   │   └── GlobalStyles.js      # Estilos globais
+│   │   ├── App.jsx                   # Componente principal
+│   │   └── main.jsx                  # Ponto de entrada
+│   │
+│   ├── index.html                    # HTML principal
+│   ├── vite.config.js                # Configuração Vite
+│   ├── package.json                  # Dependências npm
+│   └── README.md                     # Documentação frontend
+│
 ├── docker-compose.yml                 # Orquestração PostgreSQL + Backend
 ├── .env.example                       # Template de variáveis de ambiente
 ├── init.sql                           # Inicialização database
+├── iniciar-frontend.ps1              # 🎯 Script para iniciar frontend
+├── EXECUTAR_FRONTEND.md              # 📚 Guia detalhado do frontend
 ├── DEMONSTRACAO_TESTES.md            # 🎯 Showcase para recrutador
 ├── DEPLOY.md                          # Guia de deployment (300+ linhas)
 ├── PRODUCTION_CHECKLIST.md           # Checklist de produção
@@ -142,6 +192,7 @@ desafio-backend-sea/
 ### Pré-requisitos
 - Java 8+
 - Maven 3.6+
+- Node.js 16+ (para frontend)
 - Docker & Docker Compose (opcional)
 
 ### 1️⃣ Clonar o Repositório
@@ -151,16 +202,33 @@ git clone https://github.com/Danilo019/desafio-backend-sea.git
 cd desafio-backend-sea
 ```
 
-### 2️⃣ Executar Localmente (Desenvolvimento)
+### 2️⃣ Executar Backend Localmente
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-A aplicação estará disponível em: **http://localhost:8080**
+Backend disponível em: **http://localhost:8080**
 
-### 3️⃣ Executar com Docker (Produção)
+### 3️⃣ Executar Frontend Localmente
+
+```bash
+# Em outro terminal
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend disponível em: **http://localhost:3000**
+
+**Ou use o script automatizado:**
+
+```powershell
+.\iniciar-frontend.ps1
+```
+
+### 4️⃣ Executar com Docker (Produção)
 
 ```bash
 # Configurar variáveis de ambiente
@@ -173,6 +241,20 @@ docker-compose up -d --build
 # Verificar saúde
 curl http://localhost:8080/actuator/health
 ```
+
+---
+
+## 🔐 Credenciais de Acesso
+
+### 👨‍💼 Usuário Administrador
+- **E-mail**: `admin@sea.com`
+- **Senha**: `123qwe!@#`
+- **Permissões**: Criar, editar, excluir e visualizar clientes
+
+### 👤 Usuário Padrão
+- **E-mail**: `user@sea.com`
+- **Senha**: `123qwe123`
+- **Permissões**: Apenas visualizar clientes
 
 ---
 

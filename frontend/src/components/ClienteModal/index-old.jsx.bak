@@ -1,0 +1,824 @@
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { toast } from 'react-toastify';
+import InputMask from 'react-input-mask';
+import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
+import { clienteService } from '../../services/clienteService';
+import { colors, borderRadius, spacing, shadows } from '../../styles/theme';
+
+// Função auxiliar para validar CPF
+const validarCPF = (cpf) => {
+  cpf = cpf.replace(/\D/g, '');
+  
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+    return false;
+  }
+
+  let soma = 0;
+  let resto;
+
+  for (let i = 1; i <= 9; i++) {
+    soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+  }
+
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.substring(9, 10))) return false;
+
+  soma = 0;
+  for (let i = 1; i <= 10; i++) {
+    soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+  }
+
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.substring(10, 11))) return false;
+
+  return true;
+};
+
+
+const Overlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: ${colors.overlay};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+  padding: ${spacing.lg};
+  overflow-y: auto;
+`;
+
+const Modal = styled.div`
+  background: ${colors.cardBg};
+  border-radius: ${borderRadius.xl};
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: ${shadows.xl};
+  animation: slideIn 0.3s ease-in-out;
+  
+  @keyframes slideIn {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+`;
+
+const Header = styled.div`
+  padding: ${spacing.xl};
+  border-bottom: 1px solid ${colors.border};
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: ${colors.cardBg};
+  z-index: 10;
+`;
+
+const Title = styled.h2`
+  font-size: 24px;
+  color: ${colors.textPrimary};
+`;
+
+const CloseButton = styled.button`
+  padding: ${spacing.sm};
+  background: transparent;
+  border: none;
+  color: ${colors.textSecondary};
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: ${borderRadius.sm};
+
+  &:hover {
+    background: ${colors.primaryLight};
+    color: ${colors.textPrimary};
+  }
+`;
+
+const Content = styled.div`
+  padding: ${spacing.xl};
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: ${spacing.xl};
+`;
+
+const Section = styled.div`
+  background: ${colors.inputBg};
+  padding: ${spacing.lg};
+  border-radius: ${borderRadius.md};
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 16px;
+  color: ${colors.accent};
+  margin-bottom: ${spacing.lg};
+  display: flex;
+  align-items: center;
+  gap: ${spacing.sm};
+`;
+
+const Row = styled.div`
+  display: grid;
+  grid-template-columns: ${props => props.$columns || '1fr'};
+  gap: ${spacing.md};
+  margin-bottom: ${spacing.md};
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${spacing.sm};
+`;
+
+const Label = styled.label`
+  font-size: 14px;
+  font-weight: 500;
+  color: ${colors.textPrimary};
+  
+  span {
+    color: ${colors.error};
+  }
+`;
+
+const Input = styled.input`
+  padding: ${spacing.md};
+  background: ${colors.background};
+  border: 2px solid ${colors.inputBorder};
+  border-radius: ${borderRadius.md};
+  color: ${colors.textPrimary};
+  font-size: 14px;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${colors.accent};
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &::placeholder {
+    color: ${colors.textMuted};
+  }
+`;
+
+const ErrorText = styled.span`
+  font-size: 12px;
+  color: ${colors.error};
+`;
+
+const ArraySection = styled.div`
+  margin-top: ${spacing.md};
+`;
+
+const ArrayItem = styled.div`
+  display: flex;
+  gap: ${spacing.md};
+  margin-bottom: ${spacing.md};
+  padding: ${spacing.md};
+  background: ${colors.background};
+  border-radius: ${borderRadius.md};
+  align-items: flex-start;
+`;
+
+const RemoveButton = styled.button`
+  padding: ${spacing.sm};
+  background: ${colors.error};
+  border: none;
+  border-radius: ${borderRadius.sm};
+  color: ${colors.white};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #d32f2f;
+    transform: scale(1.05);
+  }
+`;
+
+const AddButton = styled.button`
+  padding: ${spacing.md};
+  background: ${colors.primaryLight};
+  border: none;
+  border-radius: ${borderRadius.md};
+  color: ${colors.white};
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${spacing.sm};
+  margin-top: ${spacing.sm};
+
+  &:hover {
+    background: ${colors.primary};
+    transform: translateY(-2px);
+  }
+`;
+
+const Footer = styled.div`
+  padding: ${spacing.xl};
+  border-top: 1px solid ${colors.border};
+  display: flex;
+  justify-content: flex-end;
+  gap: ${spacing.md};
+  position: sticky;
+  bottom: 0;
+  background: ${colors.cardBg};
+`;
+
+const Button = styled.button`
+  padding: ${spacing.md} ${spacing.xl};
+  background: ${props => props.$variant === 'primary' 
+    ? `linear-gradient(135deg, ${colors.accent} 0%, ${colors.accentLight} 100%)`
+    : colors.primaryLight};
+  border: none;
+  border-radius: ${borderRadius.md};
+  color: ${colors.white};
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: ${props => props.$variant === 'primary' ? '0 4px 12px rgba(255, 152, 0, 0.3)' : 'none'};
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: ${props => props.$variant === 'primary' 
+      ? '0 6px 16px rgba(255, 152, 0, 0.4)'
+      : '0 4px 12px rgba(0, 0, 0, 0.2)'};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const LoadingCep = styled.span`
+  font-size: 12px;
+  color: ${colors.accent};
+  margin-top: -${spacing.sm};
+`;
+
+function ClienteModal({ cliente, viewMode = false, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    nome: '',
+    cpf: '',
+    dataNascimento: '',
+    endereco: {
+      cep: '',
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      uf: '',
+    },
+    telefones: [{ numero: '', tipo: 'CELULAR' }],
+    emails: [{ email: '' }],
+  });
+
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
+
+  useEffect(() => {
+    if (cliente) {
+      setFormData({
+        nome: cliente.nome || '',
+        cpf: cliente.cpf || '',
+        dataNascimento: cliente.dataNascimento || '',
+        endereco: cliente.endereco || {
+          cep: '',
+          logradouro: '',
+          numero: '',
+          complemento: '',
+          bairro: '',
+          cidade: '',
+          uf: '',
+        },
+        telefones: cliente.telefones?.length > 0 ? cliente.telefones : [{ numero: '', tipo: 'CELULAR' }],
+        emails: cliente.emails?.length > 0 ? cliente.emails : [{ email: '' }],
+      });
+    }
+  }, [cliente]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+    
+    // Limpar erro do campo
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleEnderecoChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      endereco: {
+        ...prev.endereco,
+        [name]: value,
+      },
+    }));
+  };
+
+  const handleCepBlur = async () => {
+    const cep = formData.endereco.cep.replace(/\D/g, '');
+    
+    if (cep.length === 8) {
+      setLoadingCep(true);
+      try {
+        const data = await clienteService.consultarCep(cep);
+        setFormData(prev => ({
+          ...prev,
+          endereco: {
+            ...prev.endereco,
+            logradouro: data.logradouro || '',
+            bairro: data.bairro || '',
+            cidade: data.localidade || '',
+            uf: data.uf || '',
+          },
+        }));
+      } catch (error) {
+        toast.warning('CEP não encontrado');
+      } finally {
+        setLoadingCep(false);
+      }
+    }
+  };
+
+  const handleTelefoneChange = (index, field, value) => {
+    const newTelefones = [...formData.telefones];
+    newTelefones[index] = { ...newTelefones[index], [field]: value };
+    setFormData(prev => ({ ...prev, telefones: newTelefones }));
+  };
+
+  const addTelefone = () => {
+    setFormData(prev => ({
+      ...prev,
+      telefones: [...prev.telefones, { numero: '', tipo: 'CELULAR' }],
+    }));
+  };
+
+  const removeTelefone = (index) => {
+    if (formData.telefones.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        telefones: prev.telefones.filter((_, i) => i !== index),
+      }));
+    }
+  };
+
+  const handleEmailChange = (index, value) => {
+    const newEmails = [...formData.emails];
+    newEmails[index] = { email: value };
+    setFormData(prev => ({ ...prev, emails: newEmails }));
+  };
+
+  const addEmail = () => {
+    setFormData(prev => ({
+      ...prev,
+      emails: [...prev.emails, { email: '' }],
+    }));
+  };
+
+  const removeEmail = (index) => {
+    if (formData.emails.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        emails: prev.emails.filter((_, i) => i !== index),
+      }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.nome || formData.nome.length < 3) {
+      newErrors.nome = 'Nome deve ter no mínimo 3 caracteres';
+    }
+
+    if (!formData.cpf) {
+      newErrors.cpf = 'CPF é obrigatório';
+    } else if (!validarCPF(formData.cpf)) {
+      newErrors.cpf = 'CPF inválido';
+    }
+
+    if (!formData.dataNascimento) {
+      newErrors.dataNascimento = 'Data de nascimento é obrigatória';
+    }
+
+    if (!formData.endereco.cep) {
+      newErrors.cep = 'CEP é obrigatório';
+    }
+
+    if (!formData.endereco.logradouro) {
+      newErrors.logradouro = 'Logradouro é obrigatório';
+    }
+
+    if (!formData.endereco.numero) {
+      newErrors.numero = 'Número é obrigatório';
+    }
+
+    if (!formData.endereco.cidade) {
+      newErrors.cidade = 'Cidade é obrigatória';
+    }
+
+    if (!formData.endereco.uf) {
+      newErrors.uf = 'Estado é obrigatório';
+    }
+
+    const hasValidEmail = formData.emails.some(e => e.email && e.email.includes('@'));
+    if (!hasValidEmail) {
+      newErrors.email = 'Pelo menos um e-mail válido é obrigatório';
+    }
+
+    const hasValidTelefone = formData.telefones.some(t => t.numero && t.numero.replace(/\D/g, '').length >= 10);
+    if (!hasValidTelefone) {
+      newErrors.telefone = 'Pelo menos um telefone válido é obrigatório';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validate()) {
+      toast.error('Corrija os erros no formulário');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Limpar campos vazios
+      const dataToSend = {
+        ...formData,
+        cpf: formData.cpf.replace(/\D/g, ''),
+        endereco: {
+          ...formData.endereco,
+          cep: formData.endereco.cep.replace(/\D/g, ''),
+        },
+        telefones: formData.telefones.filter(t => t.numero),
+        emails: formData.emails.filter(e => e.email),
+      };
+
+      if (cliente?.id) {
+        await clienteService.update(cliente.id, dataToSend);
+        toast.success('Cliente atualizado com sucesso!');
+      } else {
+        await clienteService.create(dataToSend);
+        toast.success('Cliente cadastrado com sucesso!');
+      }
+
+      onSave();
+    } catch (error) {
+      console.error('Erro ao criar cliente:', error);
+      
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        
+        // Se houver erros de validação estruturados
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          errorData.errors.forEach(err => toast.error(err));
+        } else {
+          toast.error('Verifique os dados preenchidos. Todos os campos obrigatórios devem ser válidos.');
+        }
+      } else {
+        const message = error.response?.data?.message || 'Erro ao salvar cliente';
+        toast.error(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Overlay onClick={onClose}>
+      <Modal onClick={(e) => e.stopPropagation()}>
+        <Header>
+          <Title>
+            {viewMode ? 'Visualizar Cliente' : cliente ? 'Editar Cliente' : 'Novo Cliente'}
+          </Title>
+          <CloseButton onClick={onClose}>
+            <FaTimes />
+          </CloseButton>
+        </Header>
+
+        <Content>
+          <Form onSubmit={handleSubmit}>
+            <Section>
+              <SectionTitle>📋 Dados Pessoais</SectionTitle>
+              
+              <Row $columns="1fr">
+                <FormGroup>
+                  <Label>
+                    Nome Completo <span>*</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    name="nome"
+                    value={formData.nome}
+                    onChange={handleChange}
+                    placeholder="Nome completo"
+                    disabled={viewMode}
+                    maxLength={100}
+                  />
+                  {errors.nome && <ErrorText>{errors.nome}</ErrorText>}
+                </FormGroup>
+              </Row>
+
+              <Row $columns="1fr">
+                <FormGroup>
+                  <Label>
+                    CPF <span>*</span>
+                  </Label>
+                  <InputMask
+                    mask="999.999.999-99"
+                    value={formData.cpf}
+                    onChange={handleChange}
+                    disabled={viewMode || !!cliente}
+                  >
+                    {(inputProps) => (
+                      <Input
+                        {...inputProps}
+                        type="text"
+                        name="cpf"
+                        placeholder="000.000.000-00"
+                      />
+                    )}
+                  </InputMask>
+                  {errors.cpf && <ErrorText>{errors.cpf}</ErrorText>}
+                </FormGroup>
+              </Row>
+
+              <Row $columns="1fr">
+                <FormGroup>
+                  <Label>
+                    Data de Nascimento <span>*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    name="dataNascimento"
+                    value={formData.dataNascimento}
+                    onChange={handleChange}
+                    disabled={viewMode}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                  {errors.dataNascimento && <ErrorText>{errors.dataNascimento}</ErrorText>}
+                </FormGroup>
+              </Row>
+            </Section>
+
+            <Section>
+              <SectionTitle>📍 Endereço</SectionTitle>
+              
+              <Row $columns="1fr 1fr">
+                <FormGroup>
+                  <Label>
+                    CEP <span>*</span>
+                  </Label>
+                  <InputMask
+                    mask="99999-999"
+                    value={formData.endereco.cep}
+                    onChange={handleEnderecoChange}
+                    onBlur={handleCepBlur}
+                    disabled={viewMode}
+                  >
+                    {(inputProps) => (
+                      <Input
+                        {...inputProps}
+                        type="text"
+                        name="cep"
+                        placeholder="00000-000"
+                      />
+                    )}
+                  </InputMask>
+                  {loadingCep && <LoadingCep>Buscando CEP...</LoadingCep>}
+                  {errors.cep && <ErrorText>{errors.cep}</ErrorText>}
+                </FormGroup>
+              </Row>
+
+              <Row $columns="3fr 1fr">
+                <FormGroup>
+                  <Label>Logradouro <span>*</span></Label>
+                  <Input
+                    type="text"
+                    name="logradouro"
+                    value={formData.endereco.logradouro}
+                    onChange={handleEnderecoChange}
+                    placeholder="Rua, Avenida..."
+                    disabled={viewMode}
+                  />
+                  {errors.logradouro && <ErrorText>{errors.logradouro}</ErrorText>}
+                </FormGroup>
+
+                <FormGroup>
+                  <Label>Número <span>*</span></Label>
+                  <Input
+                    type="text"
+                    name="numero"
+                    value={formData.endereco.numero}
+                    onChange={handleEnderecoChange}
+                    placeholder="Nº"
+                    disabled={viewMode}
+                  />
+                  {errors.numero && <ErrorText>{errors.numero}</ErrorText>}
+                </FormGroup>
+              </Row>
+
+              <Row $columns="1fr 1fr">
+                <FormGroup>
+                  <Label>Complemento</Label>
+                  <Input
+                    type="text"
+                    name="complemento"
+                    value={formData.endereco.complemento}
+                    onChange={handleEnderecoChange}
+                    placeholder="Apt, Bloco..."
+                    disabled={viewMode}
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <Label>Bairro</Label>
+                  <Input
+                    type="text"
+                    name="bairro"
+                    value={formData.endereco.bairro}
+                    onChange={handleEnderecoChange}
+                    placeholder="Bairro"
+                    disabled={viewMode}
+                  />
+                </FormGroup>
+              </Row>
+
+              <Row $columns="2fr 1fr">
+                <FormGroup>
+                  <Label>Cidade <span>*</span></Label>
+                  <Input
+                    type="text"
+                    name="cidade"
+                    value={formData.endereco.cidade}
+                    onChange={handleEnderecoChange}
+                    placeholder="Cidade"
+                    disabled={viewMode}
+                  />
+                  {errors.cidade && <ErrorText>{errors.cidade}</ErrorText>}
+                </FormGroup>
+
+                <FormGroup>
+                  <Label>UF <span>*</span></Label>
+                  <Input
+                    type="text"
+                    name="uf"
+                    value={formData.endereco.uf}
+                    onChange={handleEnderecoChange}
+                    placeholder="UF"
+                    disabled={viewMode}
+                    maxLength={2}
+                  />
+                  {errors.uf && <ErrorText>{errors.uf}</ErrorText>}
+                </FormGroup>
+              </Row>
+            </Section>
+
+            <Section>
+              <SectionTitle>📞 Telefones</SectionTitle>
+              
+              <ArraySection>
+                {formData.telefones.map((telefone, index) => (
+                  <ArrayItem key={index}>
+                    <FormGroup style={{ flex: 2 }}>
+                      <InputMask
+                        mask="(99) 99999-9999"
+                        value={telefone.numero}
+                        onChange={(e) => handleTelefoneChange(index, 'numero', e.target.value)}
+                        disabled={viewMode}
+                      >
+                        {(inputProps) => (
+                          <Input
+                            {...inputProps}
+                            type="text"
+                            placeholder="(00) 00000-0000"
+                          />
+                        )}
+                      </InputMask>
+                    </FormGroup>
+
+                    <FormGroup style={{ flex: 1 }}>
+                      <Input
+                        as="select"
+                        value={telefone.tipo}
+                        onChange={(e) => handleTelefoneChange(index, 'tipo', e.target.value)}
+                        disabled={viewMode}
+                      >
+                        <option value="CELULAR">Celular</option>
+                        <option value="RESIDENCIAL">Residencial</option>
+                        <option value="COMERCIAL">Comercial</option>
+                      </Input>
+                    </FormGroup>
+
+                    {!viewMode && formData.telefones.length > 1 && (
+                      <RemoveButton onClick={() => removeTelefone(index)}>
+                        <FaTrash />
+                      </RemoveButton>
+                    )}
+                  </ArrayItem>
+                ))}
+              </ArraySection>
+              
+              {!viewMode && (
+                <AddButton type="button" onClick={addTelefone}>
+                  <FaPlus /> Adicionar Telefone
+                </AddButton>
+              )}
+              {errors.telefone && <ErrorText>{errors.telefone}</ErrorText>}
+            </Section>
+
+            <Section>
+              <SectionTitle>✉️ E-mails</SectionTitle>
+              
+              <ArraySection>
+                {formData.emails.map((emailObj, index) => (
+                  <ArrayItem key={index}>
+                    <FormGroup style={{ flex: 1 }}>
+                      <Input
+                        type="email"
+                        value={emailObj.email}
+                        onChange={(e) => handleEmailChange(index, e.target.value)}
+                        placeholder="email@exemplo.com"
+                        disabled={viewMode}
+                      />
+                    </FormGroup>
+
+                    {!viewMode && formData.emails.length > 1 && (
+                      <RemoveButton onClick={() => removeEmail(index)}>
+                        <FaTrash />
+                      </RemoveButton>
+                    )}
+                  </ArrayItem>
+                ))}
+              </ArraySection>
+              
+              {!viewMode && (
+                <AddButton type="button" onClick={addEmail}>
+                  <FaPlus /> Adicionar E-mail
+                </AddButton>
+              )}
+              {errors.email && <ErrorText>{errors.email}</ErrorText>}
+            </Section>
+          </Form>
+        </Content>
+
+        {!viewMode && (
+          <Footer>
+            <Button type="button" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button $variant="primary" onClick={handleSubmit} disabled={loading}>
+              {loading ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </Footer>
+        )}
+      </Modal>
+    </Overlay>
+  );
+}
+
+export default ClienteModal;

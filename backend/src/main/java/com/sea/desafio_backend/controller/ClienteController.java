@@ -13,6 +13,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -81,11 +84,11 @@ public class ClienteController {
 
     /**
      * GET /api/clientes
-     * Lista todos os clientes
+     * Lista todos os clientes com paginação
      */
     @Operation(
         summary = "Listar todos os clientes",
-        description = "Retorna lista completa de clientes cadastrados com seus endereços, telefones e emails"
+        description = "Retorna lista paginada de clientes cadastrados com seus endereços, telefones e emails"
     )
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -95,13 +98,16 @@ public class ClienteController {
         )
     })
     @GetMapping
-    public ResponseEntity<List<ClienteResponse>> listarTodos() {
-        log.info("GET /api/clientes - Listando todos os clientes");
+    public ResponseEntity<Page<ClienteResponse>> listarTodos(
+            @Parameter(description = "Número da página (iniciando em 0)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Tamanho da página", example = "10")
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("GET /api/clientes?page={}&size={} - Listando clientes", page, size);
         
-        List<Cliente> clientes = clienteService.listarTodos();
-        List<ClienteResponse> responses = clientes.stream()
-                .map(ClienteResponse::fromEntity)
-                .collect(Collectors.toList());
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Cliente> clientesPage = clienteService.listarTodosPaginado(pageable);
+        Page<ClienteResponse> responses = clientesPage.map(ClienteResponse::fromEntity);
         
         return ResponseEntity.ok(responses);
     }
@@ -165,6 +171,45 @@ public class ClienteController {
         log.info("GET /api/clientes/cpf/{} - Buscando cliente", cpf);
         
         Cliente cliente = clienteService.buscarPorCpf(cpf);
+        ClienteResponse response = ClienteResponse.fromEntity(cliente);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * PUT /api/clientes/{id}
+     * Atualiza um cliente completo
+     */
+    @Operation(
+        summary = "Atualizar cliente",
+        description = "Atualiza todos os dados de um cliente incluindo endereço, telefones e emails"
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "Cliente atualizado com sucesso",
+            content = @Content(schema = @Schema(implementation = ClienteResponse.class))
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400",
+            description = "Dados inválidos",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "Cliente não encontrado",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+        )
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<ClienteResponse> atualizarCliente(
+            @Parameter(description = "ID do cliente a ser atualizado", required = true, example = "1")
+            @PathVariable Long id,
+            @Parameter(description = "Novos dados do cliente", required = true)
+            @Valid @RequestBody ClienteRequest request) {
+        log.info("PUT /api/clientes/{} - Atualizando cliente: {}", id, request.getNome());
+        
+        Cliente cliente = clienteService.atualizarClienteCompleto(id, request);
         ClienteResponse response = ClienteResponse.fromEntity(cliente);
         
         return ResponseEntity.ok(response);
