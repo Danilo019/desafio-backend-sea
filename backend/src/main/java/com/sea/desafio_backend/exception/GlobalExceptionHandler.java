@@ -52,6 +52,29 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata exceções de CEP não encontrado (404)
+     * 
+     * Exemplo: CEP inválido ou não existe na base ViaCEP
+     */
+    @ExceptionHandler(CepNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCepNotFound(
+            CepNotFoundException ex,
+            WebRequest request) {
+        
+        log.warn("CEP não encontrado: {}", ex.getMessage());
+        
+        ErrorResponse error = new ErrorResponse(
+            LocalDateTime.now(),
+            HttpStatus.NOT_FOUND.value(),
+            "Not Found",
+            ex.getMessage(),
+            request.getDescription(false).replace("uri=", "")
+        );
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    /**
      * Trata exceções de regras de negócio (400)
      * 
      * Exemplo: "CPF já cadastrado", "Cliente deve ter pelo menos um telefone"
