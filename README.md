@@ -437,12 +437,11 @@ Siga o guia completo: **[DEPLOY.md](DEPLOY.md)**
 ## 📖 Documentação Adicional
 
 | Documento | Descrição |
-|-----------|-----------|
-| [DEMONSTRACAO_TESTES.md](DEMONSTRACAO_TESTES.md) | 🎯 **Showcase completo dos testes** (para recrutador) |
-| [backend/TESTES.md](backend/TESTES.md) | Documentação técnica de testes |
+|----------|-----------|
+| [DEMONSTRACAO_TESTES.md](DEMONSTRACAO_TESTES.md) | 🎯 **Showcase completo dos testes** (para recrutador) | |
 | [DEPLOY.md](DEPLOY.md) | Guia de deployment (300+ linhas) |
 | [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md) | Checklist de produção |
-| [backend/PLANO_TESTES.md](backend/PLANO_TESTES.md) | Planejamento estratégico |
+
 
 ---
 
@@ -466,10 +465,10 @@ Este projeto foi desenvolvido para fins de avaliação técnica.
 
 ## 👨‍💻 Autor
 
-**Danilo Araújo**  
-📧 Email: [seu-email@exemplo.com]  
-🔗 LinkedIn: [seu-linkedin]  
-💻 GitHub: [@Danilo019](https://github.com/Danilo019)
+**Danilo Teodoro**  
+📧 Email: danilosantos.silva018@gmail.com  
+🔗 LinkedIn:[Danilo Silva](https://www.linkedin.com/in/danilo-t-4b86a2136/)
+💻 GitHub:[@Danilo019](https://github.com/Danilo019)
 
 ---
 
