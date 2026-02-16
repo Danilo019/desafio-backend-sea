@@ -159,10 +159,6 @@ O frontend se comunica com o backend através de:
 ## 🚀 Deploy
 
 O projeto está pronto para deploy em:
-- Vercel
-- Netlify
-- AWS S3 + CloudFront
-- Qualquer servidor estático
 
 ```bash
 # Build para produção
@@ -175,8 +171,6 @@ npm run build
 
 O sistema é totalmente responsivo e se adapta a:
 - Desktop (> 1024px)
-- Tablet (768px - 1024px)
-- Mobile (< 768px)
 
 ## 🎨 Paleta de Cores Completa
 
@@ -202,4 +196,4 @@ O sistema é totalmente responsivo e se adapta a:
 
 ---
 
-**Desenvolvido com ❤️ para o Desafio Backend SEA**
+**Desenvolvido para o Desafio Backend SEA**
