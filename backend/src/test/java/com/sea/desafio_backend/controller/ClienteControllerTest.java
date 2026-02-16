@@ -17,6 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -118,30 +121,32 @@ class ClienteControllerTest {
         cliente2.setId(2L);
         cliente2.setNome("Maria Santos");
 
-        when(clienteService.listarTodos()).thenReturn(Arrays.asList(cliente1, cliente2));
+        Page<Cliente> clientesPage = new PageImpl<>(Arrays.asList(cliente1, cliente2));
+        when(clienteService.listarTodosPaginado(any(Pageable.class))).thenReturn(clientesPage);
 
         // Act & Assert
         mockMvc.perform(get("/api/clientes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].nome").value("João Silva"))
-                .andExpect(jsonPath("$[1].nome").value("Maria Santos"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].nome").value("João Silva"))
+                .andExpect(jsonPath("$.content[1].nome").value("Maria Santos"));
 
-        verify(clienteService).listarTodos();
+        verify(clienteService).listarTodosPaginado(any(Pageable.class));
     }
 
     @Test
     @DisplayName("GET /api/clientes - Lista vazia deve retornar 200 com array vazio")
     void listarTodos_ListaVazia_DeveRetornar200() throws Exception {
         // Arrange
-        when(clienteService.listarTodos()).thenReturn(Collections.emptyList());
+        Page<Cliente> clientesPage = new PageImpl<>(Collections.emptyList());
+        when(clienteService.listarTodosPaginado(any(Pageable.class))).thenReturn(clientesPage);
 
         // Act & Assert
         mockMvc.perform(get("/api/clientes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content", hasSize(0)));
     }
 
     // ==================== TESTES GET /api/clientes/{id} ====================
