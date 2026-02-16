@@ -1,12 +1,16 @@
 package com.sea.desafio_backend.service;
 
 import com.sea.desafio_backend.dto.request.ClienteRequest;
+import com.sea.desafio_backend.exception.CpfInvalidoException;
+import com.sea.desafio_backend.exception.CpfJaCadastradoException;
+import com.sea.desafio_backend.exception.DadosMinimosException;
 import com.sea.desafio_backend.exception.ResourceNotFoundException;
 import com.sea.desafio_backend.model.entity.Cliente;
 import com.sea.desafio_backend.model.entity.ClienteEmail;
 import com.sea.desafio_backend.model.entity.Endereco;
 import com.sea.desafio_backend.model.entity.Telefone;
 import com.sea.desafio_backend.repository.ClienteRepository;
+import com.sea.desafio_backend.util.CpfUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,72 +44,109 @@ public class ClienteService {
 
     @Transactional
     public Cliente criarCliente(@Valid ClienteRequest request) {
-
         log.info("Criando novo cliente: {}", request.getNome());
 
+        // Valida e processa CPF
+        String cpfProcessado = validarEProcessarCpf(request.getCpf(), null);
+
         // Converte DTO → Entity
-        Cliente cliente = new Cliente();
-        cliente.setNome(request.getNome());
-        
-        // Remove máscara e valida CPF
-        String cpfLimpo = removerMascaraCPF(request.getCpf());
-        if (!validarCPF(cpfLimpo)) {
-            throw new IllegalArgumentException("CPF inválido");
-        }
-        validarCpfUnico(cpfLimpo, null);
-        cliente.setCpf(aplicarMascaraCPF(cpfLimpo));
-
-        // Converte Endereco
-        if (request.getEndereco() != null) {
-            Endereco endereco = new Endereco();
-            endereco.setCep(enderecoService.removerMascaraCEP(request.getEndereco().getCep()));
-            endereco.setLogradouro(request.getEndereco().getLogradouro());
-            endereco.setComplemento(request.getEndereco().getComplemento());
-            endereco.setBairro(request.getEndereco().getBairro());
-            endereco.setCidade(request.getEndereco().getCidade());
-            endereco.setUf(request.getEndereco().getUf());
-            endereco.setCliente(cliente);
-            cliente.setEndereco(endereco);
-        }
-
-        // Converte Telefones
-        if (request.getTelefones() != null && !request.getTelefones().isEmpty()) {
-            List<Telefone> telefones = request.getTelefones().stream()
-                    .map(t -> {
-                        Telefone telefone = new Telefone();
-                        telefone.setNumero(telefoneService.removerMascaraTelefone(t.getNumero()));
-                        telefone.setTipo(t.getTipo());
-                        telefone.setPrincipal(t.getPrincipal() != null ? t.getPrincipal() : false);
-                        telefone.setCliente(cliente);
-                        return telefone;
-                    })
-                    .collect(Collectors.toList());
-            cliente.setTelefones(telefones);
-        }
-
-        // Converte Emails
-        if (request.getEmails() != null && !request.getEmails().isEmpty()) {
-            List<ClienteEmail> emails = request.getEmails().stream()
-                    .map(e -> {
-                        ClienteEmail email = new ClienteEmail();
-                        email.setEnderecoEmail(e.getEnderecoEmail());
-                        email.setPrincipal(e.getPrincipal() != null ? e.getPrincipal() : false);
-                        email.setCliente(cliente);
-                        return email;
-                    })
-                    .collect(Collectors.toList());
-            cliente.setEmails(emails);
-        }
+        Cliente cliente = converterRequestParaEntity(request, cpfProcessado);
 
         // Valida regras de negócio
         validarDadosMinimos(cliente);
 
         // Salva tudo com cascade
         Cliente clienteSalvo = clienteRepository.save(cliente);
-
         log.info("Cliente e dependências criados com sucesso. ID: {}", clienteSalvo.getId());
 
         return clienteSalvo;
+    }
+
+    /**
+     * Converte ClienteRequest para entidade Cliente
+     */
+    private Cliente converterRequestParaEntity(ClienteRequest request, String cpfProcessado) {
+        Cliente cliente = new Cliente();
+        cliente.setNome(request.getNome());
+        cliente.setCpf(cpfProcessado);
+
+        // Converte e associa entidades relacionadas
+        if (request.getEndereco() != null) {
+            cliente.setEndereco(converterEndereco(request, cliente));
+        }
+        
+        if (request.getTelefones() != null && !request.getTelefones().isEmpty()) {
+            cliente.setTelefones(converterTelefones(request, cliente));
+        }
+        
+        if (request.getEmails() != null && !request.getEmails().isEmpty()) {
+            cliente.setEmails(converterEmails(request, cliente));
+        }
+
+        return cliente;
+    }
+
+    /**
+     * Converte EnderecoRequest para entidade Endereco
+     */
+    private Endereco converterEndereco(ClienteRequest request, Cliente cliente) {
+        Endereco endereco = new Endereco();
+        endereco.setCep(enderecoService.removerMascaraCEP(request.getEndereco().getCep()));
+        endereco.setLogradouro(request.getEndereco().getLogradouro());
+        endereco.setComplemento(request.getEndereco().getComplemento());
+        endereco.setBairro(request.getEndereco().getBairro());
+        endereco.setCidade(request.getEndereco().getCidade());
+        endereco.setUf(request.getEndereco().getUf());
+        endereco.setCliente(cliente);
+        return endereco;
+    }
+
+    /**
+     * Converte lista de TelefoneRequest para entidades Telefone
+     */
+    private List<Telefone> converterTelefones(ClienteRequest request, Cliente cliente) {
+        return request.getTelefones().stream()
+            .map(t -> {
+                Telefone telefone = new Telefone();
+                telefone.setNumero(telefoneService.removerMascaraTelefone(t.getNumero()));
+                telefone.setTipo(t.getTipo());
+                telefone.setPrincipal(t.getPrincipal() != null ? t.getPrincipal() : false);
+                telefone.setCliente(cliente);
+                return telefone;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Converte lista de EmailRequest para entidades ClienteEmail
+     */
+    private List<ClienteEmail> converterEmails(ClienteRequest request, Cliente cliente) {
+        return request.getEmails().stream()
+            .map(e -> {
+                ClienteEmail email = new ClienteEmail();
+                email.setEnderecoEmail(e.getEnderecoEmail());
+                email.setPrincipal(e.getPrincipal() != null ? e.getPrincipal() : false);
+                email.setCliente(cliente);
+                return email;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Valida CPF e retorna formatado com máscara
+     * @param cpf CPF com ou sem máscara
+     * @param clienteId ID do cliente (null se for criação)
+     * @return CPF formatado com máscara
+     */
+    private String validarEProcessarCpf(String cpf, Long clienteId) {
+        // Valida formato e dígitos verificadores
+        CpfUtil.validarOuLancarExcecao(cpf);
+        
+        // Valida unicidade
+        String cpfComMascara = CpfUtil.aplicarMascara(cpf);
+        validarCpfUnico(cpfComMascara, clienteId);
+        
+        return cpfComMascara;
     }
 
     // ==================== BUSCAR CLIENTES ====================
@@ -129,15 +170,10 @@ public class ClienteService {
 
         Cliente clienteExistente = buscarPorId(id);
 
-        // Garante a máscara no CPF novo
-        String novoCpfMascarado = aplicarMascaraCPF(clienteAtualizado.getCpf());
-
-        // Valida CPF único se houver alteração
+        // Valida e processa CPF se houver alteração
+        String novoCpfMascarado = CpfUtil.aplicarMascara(clienteAtualizado.getCpf());
         if (!clienteExistente.getCpf().equals(novoCpfMascarado)) {
-            if (!validarCPF(novoCpfMascarado)) {
-                throw new IllegalArgumentException("Formato de CPF inválido");
-            }
-            validarCpfUnico(novoCpfMascarado, id);
+            validarEProcessarCpf(clienteAtualizado.getCpf(), id);
         }
 
         // Atualiza dados básicos
@@ -165,30 +201,41 @@ public class ClienteService {
 
     // ==================== VALIDAÇÕES ====================
 
+    /**
+     * Valida se CPF já está cadastrado para outro cliente
+     */
     private void validarCpfUnico(String cpf, Long clienteId) {
         Optional<Cliente> clienteExistente = clienteRepository.findByCpf(cpf);
 
         if (clienteExistente.isPresent()) {
             if (clienteId == null || !clienteExistente.get().getId().equals(clienteId)) {
-                throw new IllegalArgumentException("CPF já cadastrado: " + cpf);
+                throw new CpfJaCadastradoException(cpf);
             }
         }
     }
 
+    /**
+     * Valida se cliente possui dados mínimos obrigatórios
+     * - Pelo menos 1 telefone
+     * - Pelo menos 1 email
+     * - Define primeiro como principal se nenhum estiver marcado
+     */
     private void validarDadosMinimos(Cliente cliente) {
         if (cliente.getTelefones() == null || cliente.getTelefones().isEmpty()) {
-            throw new IllegalArgumentException("Cliente deve ter pelo menos um telefone");
+            throw new DadosMinimosException("Cliente deve ter pelo menos um telefone");
         }
         if (cliente.getEmails() == null || cliente.getEmails().isEmpty()) {
-            throw new IllegalArgumentException("Cliente deve ter pelo menos um email");
+            throw new DadosMinimosException("Cliente deve ter pelo menos um email");
         }
 
+        // Define primeiro telefone como principal se nenhum estiver marcado
         boolean temTelefonePrincipal = cliente.getTelefones().stream()
                 .anyMatch(t -> Boolean.TRUE.equals(t.getPrincipal()));
         if (!temTelefonePrincipal && !cliente.getTelefones().isEmpty()) {
             cliente.getTelefones().get(0).setPrincipal(true);
         }
 
+        // Define primeiro email como principal se nenhum estiver marcado
         boolean temEmailPrincipal = cliente.getEmails().stream()
                 .anyMatch(e -> Boolean.TRUE.equals(e.getPrincipal()));
         if (!temEmailPrincipal && !cliente.getEmails().isEmpty()) {
@@ -196,32 +243,35 @@ public class ClienteService {
         }
     }
 
-    // ==================== MÉTODOS AUXILIARES ====================
+    // ==================== MÉTODOS AUXILIARES (DEPRECATED - usar CpfUtil) ====================
 
+    /**
+     * @deprecated Use {@link CpfUtil#removerMascara(String)}
+     */
+    @Deprecated
     public String removerMascaraCPF(String cpf) {
-        if (cpf == null) return "";
-        return cpf.replaceAll("[^0-9]", "");
+        return CpfUtil.removerMascara(cpf);
     }
 
+    /**
+     * @deprecated Use {@link CpfUtil#aplicarMascara(String)}
+     */
+    @Deprecated
     public String aplicarMascaraCPF(String cpf) {
-        String cpfLimpo = removerMascaraCPF(cpf);
-        if (cpfLimpo.length() == 11) {
-            // Usando replaceFirst para melhor performance
-            return cpfLimpo.replaceFirst("(\\d{3})(\\d{3})(\\d{3})(\\d{2})", "$1.$2.$3-$4");
-        }
-        return cpf;
+        return CpfUtil.aplicarMascara(cpf);
     }
 
+    /**
+     * @deprecated Use {@link CpfUtil#validar(String)}
+     */
+    @Deprecated
     public boolean validarCPF(String cpf) {
-        String cpfLimpo = removerMascaraCPF(cpf);
-        if (cpfLimpo.length() != 11) return false;
-        if (cpfLimpo.matches("(\\d)\\1{10}")) return false; // Impede 11111111111
-        return true;
+        return CpfUtil.validar(cpf);
     }
 
     public Cliente buscarPorCpf(String cpf) {
         log.info("Buscando cliente por CPF: {}", cpf);
-        String cpfComMascara = aplicarMascaraCPF(cpf);
+        String cpfComMascara = CpfUtil.aplicarMascara(cpf);
         return clienteRepository.findByCpf(cpfComMascara)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente com CPF " + cpfComMascara + " não encontrado"));
     }

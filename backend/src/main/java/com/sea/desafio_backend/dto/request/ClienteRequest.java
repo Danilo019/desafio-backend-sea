@@ -1,5 +1,6 @@
 package com.sea.desafio_backend.dto.request;
 
+import com.sea.desafio_backend.validation.CPF;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,14 +37,12 @@ public class ClienteRequest {
     private String nome;
 
     @Schema(
-        description = "CPF do cliente no formato XXX.XXX.XXX-XX",
-        example = "123.456.789-00",
-        required = true,
-        pattern = "\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}"
+        description = "CPF do cliente no formato XXX.XXX.XXX-XX ou apenas números",
+        example = "123.456.789-09",
+        required = true
     )
     @NotBlank(message = "CPF é obrigatório")
-    @Pattern(regexp = "^\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}$", 
-             message = "CPF inválido. Use formato: 123.456.789-00")
+    @CPF(message = "CPF inválido (dígitos verificadores incorretos)")
     private String cpf;
 
     @Schema(description = "Endereço do cliente", required = true)

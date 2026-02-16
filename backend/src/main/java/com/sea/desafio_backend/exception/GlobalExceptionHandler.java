@@ -20,6 +20,11 @@ import java.time.LocalDateTime;
  * 
  * Erros tratados:
  * - ResourceNotFoundException (404 Not Found)
+ * - CepNotFoundException (404 Not Found)
+ * - CpfJaCadastradoException (409 Conflict)
+ * - EmailJaCadastradoException (409 Conflict)
+ * - CpfInvalidoException (400 Bad Request)
+ * - DadosMinimosException (400 Bad Request)
  * - IllegalArgumentException (400 Bad Request) - Regras de negócio
  * - MethodArgumentNotValidException (400 Bad Request) - Validações @Valid
  * - Exception genérica (500 Internal Server Error)
@@ -75,9 +80,101 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Trata exceções de regras de negócio (400)
+     * Trata exceções de CPF já cadastrado (409 Conflict)
      * 
-     * Exemplo: "CPF já cadastrado", "Cliente deve ter pelo menos um telefone"
+     * Exemplo: Tentativa de cadastrar CPF duplicado
+     */
+    @ExceptionHandler(CpfJaCadastradoException.class)
+    public ResponseEntity<ErrorResponse> handleCpfJaCadastrado(
+            CpfJaCadastradoException ex,
+            WebRequest request) {
+        
+        log.warn("CPF já cadastrado: {}", ex.getMessage());
+        
+        ErrorResponse error = new ErrorResponse(
+            LocalDateTime.now(),
+            HttpStatus.CONFLICT.value(),
+            "Conflict",
+            ex.getMessage(),
+            request.getDescription(false).replace("uri=", "")
+        );
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Trata exceções de Email já cadastrado (409 Conflict)
+     * 
+     * Exemplo: Tentativa de cadastrar email duplicado
+     */
+    @ExceptionHandler(EmailJaCadastradoException.class)
+    public ResponseEntity<ErrorResponse> handleEmailJaCadastrado(
+            EmailJaCadastradoException ex,
+            WebRequest request) {
+        
+        log.warn("Email já cadastrado: {}", ex.getMessage());
+        
+        ErrorResponse error = new ErrorResponse(
+            LocalDateTime.now(),
+            HttpStatus.CONFLICT.value(),
+            "Conflict",
+            ex.getMessage(),
+            request.getDescription(false).replace("uri=", "")
+        );
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Trata exceções de CPF inválido (400 Bad Request)
+     * 
+     * Exemplo: CPF com dígitos verificadores incorretos
+     */
+    @ExceptionHandler(CpfInvalidoException.class)
+    public ResponseEntity<ErrorResponse> handleCpfInvalido(
+            CpfInvalidoException ex,
+            WebRequest request) {
+        
+        log.warn("CPF inválido: {}", ex.getMessage());
+        
+        ErrorResponse error = new ErrorResponse(
+            LocalDateTime.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            "Bad Request",
+            ex.getMessage(),
+            request.getDescription(false).replace("uri=", "")
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Trata exceções de dados mínimos não fornecidos (400 Bad Request)
+     * 
+     * Exemplo: Cliente sem telefone ou sem email
+     */
+    @ExceptionHandler(DadosMinimosException.class)
+    public ResponseEntity<ErrorResponse> handleDadosMinimos(
+            DadosMinimosException ex,
+            WebRequest request) {
+        
+        log.warn("Dados mínimos não fornecidos: {}", ex.getMessage());
+        
+        ErrorResponse error = new ErrorResponse(
+            LocalDateTime.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            "Bad Request",
+            ex.getMessage(),
+            request.getDescription(false).replace("uri=", "")
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Trata exceções de regras de negócio genéricas (400)
+     * 
+     * Exemplo: Validações de negócio não cobertas pelas exceções específicas
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(

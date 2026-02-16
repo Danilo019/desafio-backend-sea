@@ -32,7 +32,7 @@ class ClienteRequestTest {
     private ClienteRequest criarClienteValido() {
         ClienteRequest request = new ClienteRequest();
         request.setNome("João da Silva");
-        request.setCpf("123.456.789-00");
+        request.setCpf("123.456.789-09");  // CPF válido com dígitos verificadores corretos
         
         EnderecoRequest endereco = new EnderecoRequest();
         endereco.setCep("01001-000");
@@ -198,20 +198,19 @@ class ClienteRequestTest {
     }
 
     @Test
-    @DisplayName("CPF sem máscara deve gerar violação")
-    void cpfSemMascara_DeveGerarViolacao() {
+    @DisplayName("CPF sem máscara mas válido não deve gerar violação")
+    void cpfSemMascara_MasValido_NaoDeveGerarViolacao() {
         // Arrange
         ClienteRequest request = criarClienteValido();
-        request.setCpf("12345678900");
+        request.setCpf("12345678909");  // CPF válido sem máscara
 
         // Act
         Set<ConstraintViolation<ClienteRequest>> violations = validator.validate(request);
 
         // Assert
-        assertFalse(violations.isEmpty());
         assertTrue(violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("cpf") &&
-                        v.getMessage().contains("123.456.789-00")));
+                .noneMatch(v -> v.getPropertyPath().toString().equals("cpf")),
+                "CPF válido sem máscara não deve gerar violação");
     }
 
     @Test

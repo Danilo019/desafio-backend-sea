@@ -4,6 +4,9 @@ import com.sea.desafio_backend.dto.request.ClienteRequest;
 import com.sea.desafio_backend.dto.request.EmailRequest;
 import com.sea.desafio_backend.dto.request.EnderecoRequest;
 import com.sea.desafio_backend.dto.request.TelefoneRequest;
+import com.sea.desafio_backend.exception.CpfInvalidoException;
+import com.sea.desafio_backend.exception.CpfJaCadastradoException;
+import com.sea.desafio_backend.exception.DadosMinimosException;
 import com.sea.desafio_backend.exception.ResourceNotFoundException;
 import com.sea.desafio_backend.model.entity.Cliente;
 import com.sea.desafio_backend.model.entity.ClienteEmail;
@@ -40,6 +43,7 @@ import static org.mockito.Mockito.*;
  * - Validações de CPF
  * - Máscaras (aplicar/remover)
  * - Regras de negócio (mínimo 1 telefone/email)
+ * - Exceções customizadas (CpfInvalidoException, CpfJaCadastradoException, DadosMinimosException)
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ClienteService - Testes Unitários")
@@ -95,40 +99,40 @@ class ClienteServiceTest {
 
     @Test
     @DisplayName("Deve lançar exceção ao criar cliente com CPF duplicado")
-    void criarCliente_ComCpfDuplicado_DeveLancarIllegalArgumentException() {
+    void criarCliente_ComCpfDuplicado_DeveLancarCpfJaCadastradoException() {
         // ARRANGE
         when(clienteRepository.findByCpf(anyString())).thenReturn(Optional.of(clienteMock));
 
         // ACT & ASSERT
-        assertThrows(IllegalArgumentException.class, 
+        assertThrows(CpfJaCadastradoException.class, 
             () -> clienteService.criarCliente(clienteRequestValido));
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao criar cliente com CPF inválido")
-    void criarCliente_ComCpfInvalido_DeveLancarIllegalArgumentException() {
+    void criarCliente_ComCpfInvalido_DeveLancarCpfInvalidoException() {
         // ARRANGE
         clienteRequestValido.setCpf("123");
 
         // ACT & ASSERT
-        assertThrows(IllegalArgumentException.class, 
+        assertThrows(CpfInvalidoException.class, 
             () -> clienteService.criarCliente(clienteRequestValido));
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao criar cliente sem telefone")
-    void criarCliente_SemTelefone_DeveLancarIllegalArgumentException() {
+    void criarCliente_SemTelefone_DeveLancarDadosMinimosException() {
         // ARRANGE
         clienteRequestValido.setTelefones(Collections.emptyList());
 
         // ACT & ASSERT
-        assertThrows(IllegalArgumentException.class, 
+        assertThrows(DadosMinimosException.class, 
             () -> clienteService.criarCliente(clienteRequestValido));
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao criar cliente sem email")
-    void criarCliente_SemEmail_DeveLancarIllegalArgumentException() {
+    void criarCliente_SemEmail_DeveLancarDadosMinimosException() {
         // ARRANGE
         clienteRequestValido.setEmails(Collections.emptyList());
         when(telefoneService.removerMascaraTelefone(anyString())).thenAnswer(i -> i.getArgument(0).toString().replaceAll("[^0-9]", ""));
@@ -136,7 +140,7 @@ class ClienteServiceTest {
         when(clienteRepository.findByCpf(anyString())).thenReturn(Optional.empty());
 
         // ACT & ASSERT
-        assertThrows(IllegalArgumentException.class, 
+        assertThrows(DadosMinimosException.class, 
             () -> clienteService.criarCliente(clienteRequestValido));
     }
 
@@ -223,7 +227,7 @@ class ClienteServiceTest {
         Long id = 1L;
         Cliente clienteAtualizado = new Cliente();
         clienteAtualizado.setNome("João Silva Atualizado");
-        clienteAtualizado.setCpf("123.456.789-01");
+        clienteAtualizado.setCpf("123.456.789-09");  // CPF válido
 
         when(clienteRepository.findById(id)).thenReturn(Optional.of(clienteMock));
         when(clienteRepository.save(any(Cliente.class))).thenReturn(clienteMock);
@@ -242,13 +246,13 @@ class ClienteServiceTest {
         Long id = 1L;
         Cliente clienteAtualizado = new Cliente();
         clienteAtualizado.setNome("João Silva");
-        clienteAtualizado.setCpf("98765432100");
+        clienteAtualizado.setCpf("111.444.777-35");  // CPF válido diferente
 
         Cliente clienteExistente = criarClienteMock();
-        clienteExistente.setCpf("123.456.789-01");
+        clienteExistente.setCpf("123.456.789-09");
 
         when(clienteRepository.findById(id)).thenReturn(Optional.of(clienteExistente));
-        when(clienteRepository.findByCpf("987.654.321-00")).thenReturn(Optional.empty());
+        when(clienteRepository.findByCpf("111.444.777-35")).thenReturn(Optional.empty());
         when(clienteRepository.save(any(Cliente.class))).thenReturn(clienteExistente);
 
         // ACT
@@ -260,24 +264,24 @@ class ClienteServiceTest {
 
     @Test
     @DisplayName("Deve lançar exceção ao atualizar com CPF duplicado")
-    void atualizarCliente_ComCpfDuplicado_DeveLancarIllegalArgumentException() {
+    void atualizarCliente_ComCpfDuplicado_DeveLancarCpfJaCadastradoException() {
         // ARRANGE
         Long id = 1L;
         Cliente clienteAtualizado = new Cliente();
         clienteAtualizado.setNome("João Silva");
-        clienteAtualizado.setCpf("98765432100");
+        clienteAtualizado.setCpf("111.444.777-35");  // CPF válido
 
         Cliente clienteExistente = criarClienteMock();
-        clienteExistente.setCpf("123.456.789-01");
+        clienteExistente.setCpf("123.456.789-09");
 
         Cliente clienteComCpfDuplicado = new Cliente();
         clienteComCpfDuplicado.setId(2L);
 
         when(clienteRepository.findById(id)).thenReturn(Optional.of(clienteExistente));
-        when(clienteRepository.findByCpf("987.654.321-00")).thenReturn(Optional.of(clienteComCpfDuplicado));
+        when(clienteRepository.findByCpf("111.444.777-35")).thenReturn(Optional.of(clienteComCpfDuplicado));
 
         // ACT & ASSERT
-        assertThrows(IllegalArgumentException.class, 
+        assertThrows(CpfJaCadastradoException.class, 
             () -> clienteService.atualizarCliente(id, clienteAtualizado));
     }
 
@@ -313,10 +317,12 @@ class ClienteServiceTest {
     // ==================== TESTES DE VALIDAÇÕES ====================
 
     @Test
-    @DisplayName("Deve validar CPF válido corretamente")
+    @DisplayName("Deve validar CPF válido com dígitos verificadores corretos")
     void validarCPF_ComCpfValido_DeveRetornarTrue() {
+        // CPF válido: 123.456.789-09
         // ACT
-        boolean resultado = clienteService.validarCPF("12345678901");
+        @SuppressWarnings("deprecation")
+        boolean resultado = clienteService.validarCPF("12345678909");
 
         // ASSERT
         assertTrue(resultado);
@@ -326,6 +332,7 @@ class ClienteServiceTest {
     @DisplayName("Deve invalidar CPF com menos de 11 dígitos")
     void validarCPF_ComMenosDe11Digitos_DeveRetornarFalse() {
         // ACT
+        @SuppressWarnings("deprecation")
         boolean resultado = clienteService.validarCPF("123456789");
 
         // ASSERT
@@ -336,7 +343,20 @@ class ClienteServiceTest {
     @DisplayName("Deve invalidar CPF com todos os dígitos iguais")
     void validarCPF_ComDigitosIguais_DeveRetornarFalse() {
         // ACT
+        @SuppressWarnings("deprecation")
         boolean resultado = clienteService.validarCPF("11111111111");
+
+        // ASSERT
+        assertFalse(resultado);
+    }
+
+    @Test
+    @DisplayName("Deve invalidar CPF com dígitos verificadores incorretos")
+    void validarCPF_ComDigitosVerificadoresIncorretos_DeveRetornarFalse() {
+        // CPF com dígitos verificadores errados: 123.456.789-00 (correto seria 09)
+        // ACT
+        @SuppressWarnings("deprecation")
+        boolean resultado = clienteService.validarCPF("12345678900");
 
         // ASSERT
         assertFalse(resultado);
@@ -348,26 +368,29 @@ class ClienteServiceTest {
     @DisplayName("Deve remover máscara do CPF corretamente")
     void removerMascaraCPF_DeveRemoverFormatacao() {
         // ACT
-        String resultado = clienteService.removerMascaraCPF("123.456.789-01");
+        @SuppressWarnings("deprecation")
+        String resultado = clienteService.removerMascaraCPF("123.456.789-09");
 
         // ASSERT
-        assertEquals("12345678901", resultado);
+        assertEquals("12345678909", resultado);
     }
 
     @Test
     @DisplayName("Deve aplicar máscara no CPF corretamente")
     void aplicarMascaraCPF_DeveAplicarFormatacao() {
         // ACT
-        String resultado = clienteService.aplicarMascaraCPF("12345678901");
+        @SuppressWarnings("deprecation")
+        String resultado = clienteService.aplicarMascaraCPF("12345678909");
 
         // ASSERT
-        assertEquals("123.456.789-01", resultado);
+        assertEquals("123.456.789-09", resultado);
     }
 
     @Test
     @DisplayName("Deve retornar string vazia ao remover máscara de CPF nulo")
     void removerMascaraCPF_ComCpfNulo_DeveRetornarStringVazia() {
         // ACT
+        @SuppressWarnings("deprecation")
         String resultado = clienteService.removerMascaraCPF(null);
 
         // ASSERT
@@ -378,6 +401,7 @@ class ClienteServiceTest {
     @DisplayName("Deve retornar CPF original se formato inválido ao aplicar máscara")
     void aplicarMascaraCPF_ComFormatoInvalido_DeveRetornarOriginal() {
         // ACT
+        @SuppressWarnings("deprecation")
         String resultado = clienteService.aplicarMascaraCPF("123");
 
         // ASSERT
@@ -389,7 +413,7 @@ class ClienteServiceTest {
     private ClienteRequest criarClienteRequestValido() {
         ClienteRequest request = new ClienteRequest();
         request.setNome("João Silva");
-        request.setCpf("123.456.789-01");
+        request.setCpf("123.456.789-09");  // CPF válido com dígitos verificadores corretos
 
         EnderecoRequest endereco = new EnderecoRequest();
         endereco.setCep("01310-100");
@@ -418,7 +442,7 @@ class ClienteServiceTest {
         Cliente cliente = new Cliente();
         cliente.setId(1L);
         cliente.setNome("João Silva");
-        cliente.setCpf("123.456.789-01");
+        cliente.setCpf("123.456.789-09");  // CPF válido com dígitos verificadores corretos
 
         Endereco endereco = new Endereco();
         endereco.setId(1L);

@@ -1,6 +1,7 @@
 package com.sea.desafio_backend.repository;
 
 import com.sea.desafio_backend.model.entity.Cliente;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -68,4 +69,23 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
      */
     @Query("SELECT c FROM Cliente c LEFT JOIN FETCH c.emails WHERE c.id = :id")
     Optional<Cliente> findByIdWithEmails(@Param("id") Long id);
+
+    /**
+     * Busca cliente por ID com todas as dependências usando EntityGraph
+     * Mais eficiente que múltiplas queries separadas
+     * @param id ID do cliente
+     * @return Optional com cliente completo
+     */
+    @EntityGraph(attributePaths = {"endereco", "telefones", "emails"})
+    @Query("SELECT c FROM Cliente c WHERE c.id = :id")
+    Optional<Cliente> findByIdWithAllDetails(@Param("id") Long id);
+
+    /**
+     * Lista todos os clientes com todas as dependências usando EntityGraph
+     * Evita problema N+1 carregando tudo em uma query
+     * @return Lista de clientes completos
+     */
+    @EntityGraph(attributePaths = {"endereco", "telefones", "emails"})
+    @Query("SELECT DISTINCT c FROM Cliente c")
+    List<Cliente> findAllWithDetails();
 }

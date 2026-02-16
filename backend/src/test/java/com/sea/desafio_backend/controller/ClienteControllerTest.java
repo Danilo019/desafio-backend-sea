@@ -66,7 +66,7 @@ class ClienteControllerTest {
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.nome").value("João Silva"))
-                .andExpect(jsonPath("$.cpf").value("123.456.789-01")) // CPF formatado
+                .andExpect(jsonPath("$.cpf").value("123.456.789-09")) // CPF formatado válido
                 .andExpect(jsonPath("$.endereco").exists())
                 .andExpect(jsonPath("$.telefones").isArray())
                 .andExpect(jsonPath("$.emails").isArray());
@@ -158,7 +158,7 @@ class ClienteControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.nome").value("João Silva"))
-                .andExpect(jsonPath("$.cpf").value("123.456.789-01"));
+                .andExpect(jsonPath("$.cpf").value("123.456.789-09"));
 
         verify(clienteService).buscarPorId(1L);
     }
@@ -184,15 +184,15 @@ class ClienteControllerTest {
     void buscarPorCpf_ClienteExistente_DeveRetornar200() throws Exception {
         // Arrange
         Cliente cliente = criarClienteCompleto();
-        when(clienteService.buscarPorCpf("123.456.789-01")).thenReturn(cliente);
+        when(clienteService.buscarPorCpf("123.456.789-09")).thenReturn(cliente);
 
         // Act & Assert
-        mockMvc.perform(get("/api/clientes/cpf/123.456.789-01"))
+        mockMvc.perform(get("/api/clientes/cpf/123.456.789-09"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.cpf").value("123.456.789-01"))
+                .andExpect(jsonPath("$.cpf").value("123.456.789-09"))
                 .andExpect(jsonPath("$.nome").value("João Silva"));
 
-        verify(clienteService).buscarPorCpf("123.456.789-01");
+        verify(clienteService).buscarPorCpf("123.456.789-09");
     }
 
     @Test
@@ -239,7 +239,7 @@ class ClienteControllerTest {
     private ClienteRequest criarClienteRequestCompleto() {
         ClienteRequest request = new ClienteRequest();
         request.setNome("João Silva");
-        request.setCpf("123.456.789-01"); // CPF com máscara conforme validação
+        request.setCpf("123.456.789-09");  // CPF válido com dígitos verificadores corretos
 
         EnderecoRequest endereco = new EnderecoRequest();
         endereco.setCep("01001000");
@@ -267,7 +267,7 @@ class ClienteControllerTest {
         Cliente cliente = new Cliente();
         cliente.setId(1L);
         cliente.setNome("João Silva");
-        cliente.setCpf("123.456.789-01"); // CPF formatado
+        cliente.setCpf("123.456.789-09");  // CPF válido formatado
 
         Endereco endereco = new Endereco();
         endereco.setId(1L);
